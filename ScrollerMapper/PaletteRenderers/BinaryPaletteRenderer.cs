@@ -21,17 +21,13 @@ namespace ScrollerMapper.PaletteRenderers
         {
             using (var writer = _fileNameGenerator.GetPaletteFileName(name).GetBinaryWriter())
             {
-                var colors = new byte[4];
-                colors[3] = 0;
 
                 var maxEntries = Math.Min(palette.Entries.Length, _options.PlaneCount.PowerOfTwo());
                 for (int i = 0; i < maxEntries; i++)
                 {
                     var entry = palette.Entries[i];
-                    colors[2] = entry.R;
-                    colors[1] = entry.G;
-                    colors[0] = entry.B;
-                    writer.Write(colors);
+                    var colors = (ushort) (((entry.R & 0xf0) << 4) | ((entry.G & 0xf0)) | ((entry.B & 0xf0) >> 4));
+                    writer.WriteWord(colors);
                 }
             }
         }
