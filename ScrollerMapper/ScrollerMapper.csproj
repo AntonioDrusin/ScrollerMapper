@@ -60,8 +60,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitmapExtensions.cs" />
+    <Compile Include="BitplaneRenderers\BinaryBitplaneRenderer.cs" />
+    <Compile Include="BitplaneRenderers\BitmapTransformer.cs" />
     <Compile Include="FileExtensions.cs" />
-    <Compile Include="ImageRenderers\IImageRenderer.cs" />
+    <Compile Include="FileNameGenerator.cs" />
+    <Compile Include="BitplaneRenderers\IBitplaneRenderer.cs" />
+    <Compile Include="MathExtensions.cs" />
+    <Compile Include="LayerInfoRenderers\ILayerInfoRenderer.cs" />
+    <Compile Include="LayerInfoRenderers\LayerInfoBinaryRenderer.cs" />
     <Compile Include="TileSetConverters\ITileSetConverter.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="PaletteRenderers\BinaryPaletteRenderer.cs" />
