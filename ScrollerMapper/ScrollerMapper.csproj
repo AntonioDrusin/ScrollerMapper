@@ -7,7 +7,7 @@
     <ProjectGuid>{6E12F11B-4BFF-483B-9AF2-21E8C5E026A5}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>ScrollerMapper</RootNamespace>
-    <AssemblyName>ScrollerMapper</AssemblyName>
+    <AssemblyName>sm</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -31,6 +31,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Castle.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
@@ -61,13 +64,16 @@
   <ItemGroup>
     <Compile Include="BitmapExtensions.cs" />
     <Compile Include="BitplaneRenderers\BinaryBitplaneRenderer.cs" />
-    <Compile Include="BitplaneRenderers\BitmapTransformer.cs" />
+    <Compile Include="ConversionException.cs" />
+    <Compile Include="Writers\IWriter.cs" />
+    <Compile Include="Transformers\BitmapTransformer.cs" />
     <Compile Include="FileExtensions.cs" />
-    <Compile Include="FileNameGenerator.cs" />
+    <Compile Include="Writers\FileWriter.cs" />
     <Compile Include="BitplaneRenderers\IBitplaneRenderer.cs" />
     <Compile Include="MathExtensions.cs" />
     <Compile Include="LayerInfoRenderers\ILayerInfoRenderer.cs" />
     <Compile Include="LayerInfoRenderers\LayerInfoBinaryRenderer.cs" />
+    <Compile Include="TileRenderers\ITileRenderer.cs" />
     <Compile Include="TileSetConverters\ITileSetConverter.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="PaletteRenderers\BinaryPaletteRenderer.cs" />
@@ -77,6 +83,7 @@
     <Compile Include="StreamExtensions\StreamExtension.cs" />
     <Compile Include="TileSetConverters\TileSetConverter.cs" />
     <Compile Include="LevelDefinition.cs" />
+    <Compile Include="Writers\ObjectType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -84,4 +91,7 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>copy $(TargetDir)\*.* D:\dev\tools</PostBuildEvent>
+  </PropertyGroup>
 </Project>

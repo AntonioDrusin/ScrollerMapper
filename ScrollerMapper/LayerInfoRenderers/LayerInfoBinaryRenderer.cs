@@ -1,14 +1,12 @@
-﻿using ScrollerMapper.StreamExtensions;
-
-namespace ScrollerMapper.LayerInfoRenderers
+﻿namespace ScrollerMapper.LayerInfoRenderers
 {
     internal class LayerInfoBinaryRenderer : ILayerInfoRenderer
     {
-        private readonly IFileNameGenerator _fileNameGenerator;
+        private readonly IWriter _writer;
 
-        public LayerInfoBinaryRenderer(IFileNameGenerator fileNameGenerator)
+        public LayerInfoBinaryRenderer(IWriter writer)
         {
-            _fileNameGenerator = fileNameGenerator;
+            _writer = writer;
         }
 
         /// <summary>
@@ -22,15 +20,14 @@ namespace ScrollerMapper.LayerInfoRenderers
         /// <param name="layer"></param>
         public void Render(LayerDefinition layer)
         {
-            using (var writer = _fileNameGenerator.GetLayerFileName(layer.Name).GetBinaryWriter())
+            _writer.StartObject(ObjectType.Layer, null);
+            _writer.WriteWord((ushort) layer.Width);
+            _writer.WriteWord((ushort) layer.Height);
+            foreach (var tileId in layer.TileIds)
             {
-                writer.WriteWord((ushort) layer.Width);
-                writer.WriteWord((ushort) layer.Height);
-                foreach (var tileId in layer.TileIds)
-                {
-                    writer.WriteWord((ushort)tileId);
-                }
+                _writer.WriteWord((ushort) tileId);
             }
+            _writer.CompleteObject();
         }
     }
 }

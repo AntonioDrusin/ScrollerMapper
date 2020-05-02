@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using NUnit.Framework;
-using ScrollerMapper.ImageRenderers;
+using ScrollerMapper.Transformers;
 
 namespace ScrollerMapperTests
 {
@@ -22,8 +22,9 @@ namespace ScrollerMapperTests
         public void RoundsWidthToWord()
         {
             var bitmap = CreateBitmap(23);
+            _transformer.SetBitmap(bitmap);
 
-            var result = _transformer.GetByteWidth(bitmap);
+            var result = _transformer.GetByteWidth();
 
             Assert.AreEqual(4, result);
         }
@@ -33,8 +34,9 @@ namespace ScrollerMapperTests
         public void ReturnsHeight()
         {
             var bitmap = CreateBitmap(23);
+            _transformer.SetBitmap(bitmap);
 
-            var result = _transformer.GetHeight(bitmap);
+            var result = _transformer.GetHeight();
 
             Assert.AreEqual(10, result);
         }
@@ -44,8 +46,9 @@ namespace ScrollerMapperTests
         {
             var source = GetSource();
             var bitmap = CreateBitmap(10, 4, source);
+            _transformer.SetBitmap(bitmap);
 
-            var result = _transformer.GetBitplanes(bitmap, 4);
+            var result = _transformer.GetBitplanes(4);
 
             var expected = new byte[]
             {
@@ -78,8 +81,9 @@ namespace ScrollerMapperTests
         {
             var source = GetSource();
             var bitmap = CreateBitmap(10, 4, source);
+            _transformer.SetBitmap(bitmap);
 
-            var result = _transformer.GetBitplanes(bitmap, 1);
+            var result = _transformer.GetBitplanes(1);
 
             var expected = new byte[]
             {

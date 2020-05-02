@@ -1,15 +1,29 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Security.Cryptography.X509Certificates;
 
-namespace ScrollerMapper.ImageRenderers
+namespace ScrollerMapper.Transformers
 {
-    internal class BitmapTransformer
+    internal interface IBitmapTransformer
     {
-        public int GetByteWidth(Bitmap bitmap)
+        void SetBitmap(Bitmap bitmap);
+        int GetByteWidth();
+        int GetHeight();
+        byte[] GetBitplanes(int bitplaneCount);
+    }
+
+    internal class BitmapTransformer : IBitmapTransformer
+    {
+        private Bitmap _bitmap;
+
+        public void SetBitmap(Bitmap bitmap)
         {
-            return RoundUp(bitmap.Width / 8);
+            _bitmap = bitmap;
+        }
+
+        public int GetByteWidth()
+        {
+            return RoundUp(_bitmap.Width / 8);
         }
 
         private int RoundUp(int bytes)
@@ -18,24 +32,24 @@ namespace ScrollerMapper.ImageRenderers
             return requiredWords * 2;
         }
 
-        public int GetHeight(Bitmap bitmap)
+        public int GetHeight()
         {
-            return bitmap.Height;
+            return _bitmap.Height;
         }
 
-        public byte[] GetBitplanes(Bitmap bitmap, int bitplaneCount)
+        public byte[] GetBitplanes(int bitplaneCount)
         {
-            ValidateBitmap(bitmap);
-            var byteWidth = GetByteWidth(bitmap);
-            var width = bitmap.Width;
-            var height = GetHeight(bitmap);
+            ValidateBitmap(_bitmap);
+            var byteWidth = GetByteWidth();
+            var width = _bitmap.Width;
+            var height = GetHeight();
 
             var converted = new byte[byteWidth * height * bitplaneCount];
 
 
             byte bplTest = (byte) (1 << (bitplaneCount - 1));
             
-            var source = bitmap.GetImageBytes();
+            var source = _bitmap.GetImageBytes();
 
             var convertIndex = 0;
             for (int bitplane = bitplaneCount-1; bitplane >= 0; bitplane--)
@@ -70,7 +84,7 @@ namespace ScrollerMapper.ImageRenderers
         {
             if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
             {
-                throw new InvalidOperationException("Only 8bpp format is supported.");
+                throw new ConversionException("Only 8bpp format bitmaps are supported.");
             }
         }
     }

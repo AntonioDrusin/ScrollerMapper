@@ -5,6 +5,7 @@ using System.Drawing.Imaging;
 using ScrollerMapper.ImageRenderers;
 using ScrollerMapper.LayerInfoRenderers;
 using ScrollerMapper.PaletteRenderers;
+using ScrollerMapper.TileRenderers;
 
 namespace ScrollerMapper
 {
@@ -14,13 +15,15 @@ namespace ScrollerMapper
         private readonly IPaletteRenderer _paletteRenderer;
         private readonly ILayerInfoRenderer _layerRenderer;
         private readonly IBitplaneRenderer _bitplaneRenderer;
+        private readonly ITileRenderer _tileRenderer;
 
-        public TileSetConverter(Options options, IPaletteRenderer paletteRenderer, ILayerInfoRenderer layerRenderer, IBitplaneRenderer bitplaneRenderer)
+        public TileSetConverter(Options options, IPaletteRenderer paletteRenderer, ILayerInfoRenderer layerRenderer, IBitplaneRenderer bitplaneRenderer, ITileRenderer tileRenderer)
         {
             _options = options;
             _paletteRenderer = paletteRenderer;
             _layerRenderer = layerRenderer;
             _bitplaneRenderer = bitplaneRenderer;
+            _tileRenderer = tileRenderer;
         }
 
         public void ConvertAll()
@@ -31,6 +34,7 @@ namespace ScrollerMapper
                 var image = LoadBitmap(tileSet);
                 _paletteRenderer.Render(tileSet.Name, image.Palette, _options.PlaneCount.PowerOfTwo());
                 _bitplaneRenderer.Render(tileSet.Name, image);
+                _tileRenderer.Render(tileSet.Name, image, tileSet.TileWidth, tileSet.TileHeight );
             }
 
             foreach (var layer in definition.Layers)
