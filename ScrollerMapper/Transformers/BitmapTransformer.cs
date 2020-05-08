@@ -47,12 +47,12 @@ namespace ScrollerMapper.Transformers
             var converted = new byte[byteWidth * height * bitplaneCount];
 
 
-            byte bplTest = (byte) (1 << (bitplaneCount - 1));
+            byte bplTest = 1;
             
             var source = _bitmap.GetImageBytes();
 
             var convertIndex = 0;
-            for (int bitplane = bitplaneCount-1; bitplane >= 0; bitplane--)
+            for (int bitplane = 0; bitplane < bitplaneCount; bitplane++)
             {
                 for (int y = 0; y < height; y++)
                 {
@@ -74,7 +74,7 @@ namespace ScrollerMapper.Transformers
                     }
                 }
 
-                bplTest = (byte) (bplTest >> 1);
+                bplTest = (byte) (bplTest << 1);
             }
 
             return converted;

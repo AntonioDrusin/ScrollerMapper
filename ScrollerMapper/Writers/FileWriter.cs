@@ -35,6 +35,7 @@ namespace ScrollerMapper
 
         public void CompleteObject()
         {
+            TextWriter.WriteLine("even");
             TextWriter.Indent--;
             TextWriter.WriteLine();
             _currentWriter?.Dispose();

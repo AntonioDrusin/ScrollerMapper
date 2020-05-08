@@ -29,12 +29,14 @@ namespace ScrollerMapperTests
         {
             var planesData = new byte[]
             {
+                // BPL1 
                 11, 12, 21, 22, 
                 13, 14, 23, 24, 
 
                 31, 32, 41, 42, 
                 33, 34, 43, 44,
 
+                // BPL2 
                 51, 52, 61, 62,
                 53, 54, 63, 64,
 
@@ -56,24 +58,24 @@ namespace ScrollerMapperTests
                 2,  // Tile Height
 
                 11, 12, // Tile 1 BPL 1
-                13, 14,
                 51, 52, // Tile 1 BPL 2
-                53, 54,
+                13, 14, // Tile 1 BPL 1 row 2
+                53, 54, // Tile 1 BPL 2 row 2
 
 
                 21, 22, // Tile 2 BPL 1
-                23, 24,
                 61, 62, // Tile 2 BPL 2
+                23, 24,
                 63, 64,
 
                 31, 32, // ...
-                33, 34,
                 71, 72, // ...
+                33, 34,
                 73, 74,
 
                 41, 42, // ...
-                43, 44,
                 81, 82, // ...
+                43, 44,
                 83, 84
             };
 

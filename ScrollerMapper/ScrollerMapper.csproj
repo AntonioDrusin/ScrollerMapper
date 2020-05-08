@@ -65,6 +65,7 @@
     <Compile Include="BitmapExtensions.cs" />
     <Compile Include="BitplaneRenderers\BinaryBitplaneRenderer.cs" />
     <Compile Include="ConversionException.cs" />
+    <Compile Include="TileRenderers\BinaryTileRenderer.cs" />
     <Compile Include="Writers\IWriter.cs" />
     <Compile Include="Transformers\BitmapTransformer.cs" />
     <Compile Include="FileExtensions.cs" />

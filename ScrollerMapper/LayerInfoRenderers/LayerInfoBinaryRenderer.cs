@@ -28,6 +28,7 @@
                 _writer.WriteWord((ushort) tileId);
             }
             _writer.CompleteObject();
+
         }
     }
 }
