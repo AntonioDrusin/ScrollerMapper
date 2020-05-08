@@ -37,8 +37,10 @@ namespace ScrollerMapper.TileRenderers
             var byteWidth = _transformer.GetByteWidth();
             var height = _transformer.GetHeight();
             var tileByteWidth = tileWidth / 8;
+            var tileSize = tileByteWidth * tileHeight * _planeCount;
+
             var data = _transformer.GetBitplanes(_planeCount);
-            var destination = new byte[data.Length];
+            var destination = new byte[data.Length+tileSize]; // For one blank tile at the beginning
             var bplSize = byteWidth * height;
 
             var tileCounter = 0;
@@ -57,7 +59,9 @@ namespace ScrollerMapper.TileRenderers
 
                             var dst = tileByteWidth * tileHeight * _planeCount * tileCounter
                                       + bpl * tileByteWidth 
-                                      + tileRow * tileByteWidth * _planeCount;
+                                      + tileRow * tileByteWidth * _planeCount
+                                      + tileSize // One blank tile at the beginning
+                                      ;
 
                             for (int b = 0; b < tileByteWidth; b++)
                             {
@@ -72,9 +76,6 @@ namespace ScrollerMapper.TileRenderers
             }
 
             _writer.StartObject(ObjectType.Tile, name);
-            _writer.WriteWord((ushort) ((bitmap.Width / tileWidth) * (bitmap.Height / tileHeight)));
-            _writer.WriteByte((byte) tileWidth);
-            _writer.WriteByte((byte) tileHeight);
             _writer.WriteBlob(destination);
             _writer.CompleteObject();
         }

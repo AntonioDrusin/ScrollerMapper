@@ -18,17 +18,25 @@
         /// 
         /// </summary>
         /// <param name="layer"></param>
-        public void Render(LayerDefinition layer)
+        /// <param name="tileBpl"></param>
+        /// <param name="tileWidth"></param>
+        /// <param name="tileHeight"></param>
+        public void Render(LayerDefinition layer, int tileBpl, int tileWidth, int tileHeight)
         {
             _writer.StartObject(ObjectType.Layer, null);
-            _writer.WriteWord((ushort) layer.Width);
-            _writer.WriteWord((ushort) layer.Height);
             foreach (var tileId in layer.TileIds)
             {
-                _writer.WriteWord((ushort) tileId);
+
+                // Pointer to tile instead of id would be
+                // tileId * tileWinBytes * tileHeight * tileBpl
+                _writer.WriteWord((ushort)((tileId) * tileWidth * tileHeight * tileBpl / 8));
+                
             }
             _writer.CompleteObject();
 
         }
+
+        
+        
     }
 }

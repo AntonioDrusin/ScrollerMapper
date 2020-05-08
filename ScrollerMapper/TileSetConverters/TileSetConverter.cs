@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 using ScrollerMapper.ImageRenderers;
 using ScrollerMapper.LayerInfoRenderers;
 using ScrollerMapper.PaletteRenderers;
@@ -29,17 +30,29 @@ namespace ScrollerMapper
         public void ConvertAll()
         {
             var definition = LevelDefinition.Load(_options.TileFileName);
+            int tileWidth = definition.TileSets.First().TileWidth;
+            int tileHeight = definition.TileSets.First().TileHeight;
+
             foreach (var tileSet in definition.TileSets)
             {
+                if (tileSet.TileHeight != tileHeight)
+                {
+                    throw new ConversionException("All tiles sets must have tiles of the same height.");
+                }
+                if (tileSet.TileWidth!= tileWidth)
+                {
+                    throw new ConversionException("All tiles sets must have tiles of the same width.");
+                }
+
                 var image = LoadBitmap(tileSet);
                 _paletteRenderer.Render(tileSet.Name, image.Palette, _options.PlaneCount.PowerOfTwo());
                 _bitplaneRenderer.Render(tileSet.Name, image);
-                _tileRenderer.Render(tileSet.Name, image, tileSet.TileWidth, tileSet.TileHeight );
+                _tileRenderer.Render(tileSet.Name, image, tileWidth, tileHeight );
             }
 
             foreach (var layer in definition.Layers)
             {
-                _layerRenderer.Render(layer);
+                _layerRenderer.Render(layer,_options.PlaneCount, tileWidth, tileHeight);
             }
         }
 

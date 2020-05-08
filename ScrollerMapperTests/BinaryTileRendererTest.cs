@@ -30,10 +30,10 @@ namespace ScrollerMapperTests
             var planesData = new byte[]
             {
                 // BPL1 
-                11, 12, 21, 22, 
-                13, 14, 23, 24, 
+                11, 12, 21, 22,
+                13, 14, 23, 24,
 
-                31, 32, 41, 42, 
+                31, 32, 41, 42,
                 33, 34, 43, 44,
 
                 // BPL2 
@@ -42,20 +42,21 @@ namespace ScrollerMapperTests
 
                 71, 72, 81, 82,
                 73, 74, 83, 84,
-
             };
 
             _transformerMock.Setup(f => f.GetHeight()).Returns(4);
             _transformerMock.Setup(f => f.GetByteWidth()).Returns(4);
-            _transformerMock.Setup(f => f.GetBitplanes(It.Is<int>(n=>n==2))).Returns(planesData);
+            _transformerMock.Setup(f => f.GetBitplanes(It.Is<int>(n => n == 2))).Returns(planesData);
 
             _renderer.Render("data", new Bitmap(16 * 2, 4), 16, 2);
 
             var expected = new byte[]
             {
-                0,4, // Number of tiles
-                16,  // Tile Width
-                2,  // Tile Height
+                // Adds one blank tile so 0 maps here.
+                00, 00,
+                00, 00,
+                00, 00,
+                00, 00,
 
                 11, 12, // Tile 1 BPL 1
                 51, 52, // Tile 1 BPL 2
