@@ -1,6 +1,6 @@
 ﻿namespace ScrollerMapper
 {
-    internal interface ITileSetConverter
+    internal interface IConverter
     {
         void ConvertAll();
     }

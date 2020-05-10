@@ -5,10 +5,10 @@ namespace ScrollerMapper.PaletteRenderers
 {
     internal class BinaryPaletteRenderer : IPaletteRenderer
     {
-        private readonly Options _options;
+        private readonly TileOptions _options;
         private readonly IWriter _writer;
 
-        public BinaryPaletteRenderer(Options options, IWriter writer)
+        public BinaryPaletteRenderer(TileOptions options, IWriter writer)
         {
             _options = options;
             _writer = writer;

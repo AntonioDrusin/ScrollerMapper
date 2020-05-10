@@ -9,7 +9,7 @@ namespace ScrollerMapper.TileRenderers
         private readonly IWriter _writer;
         private readonly int _planeCount;
 
-        public BinaryTileRenderer(Options options, IBitmapTransformer transformer, IWriter writer)
+        public BinaryTileRenderer(TileOptions options, IBitmapTransformer transformer, IWriter writer)
         {
             _transformer = transformer;
             _writer = writer;
@@ -40,7 +40,7 @@ namespace ScrollerMapper.TileRenderers
             var tileSize = tileByteWidth * tileHeight * _planeCount;
 
             var data = _transformer.GetBitplanes(_planeCount);
-            var destination = new byte[data.Length+tileSize]; // For one blank tile at the beginning
+            var destination = new byte[data.Length + tileSize]; // For one blank tile at the beginning
             var bplSize = byteWidth * height;
 
             var tileCounter = 0;
@@ -58,10 +58,10 @@ namespace ScrollerMapper.TileRenderers
                                       + tileRow * byteWidth;
 
                             var dst = tileByteWidth * tileHeight * _planeCount * tileCounter
-                                      + bpl * tileByteWidth 
+                                      + bpl * tileByteWidth
                                       + tileRow * tileByteWidth * _planeCount
                                       + tileSize // One blank tile at the beginning
-                                      ;
+                                ;
 
                             for (int b = 0; b < tileByteWidth; b++)
                             {
@@ -74,6 +74,17 @@ namespace ScrollerMapper.TileRenderers
                     tileCounter++;
                 }
             }
+
+            _writer.WriteCode(Code.Chip, "; Tiles are in interlaced format one after another.");
+            _writer.WriteCode(Code.Chip,
+                "; The first tile is all zeros and is to be used when Tiled does not have a tile assigned.");
+            _writer.WriteCode(Code.Chip,
+                $"; Tiles are {tileByteWidth} byte wide, {tileHeight} pixel tall and have {_planeCount} biplanes");
+
+            _writer.WriteCode(Code.Def, $"; Tile definitions for {name}");
+            _writer.WriteCode(Code.Def, $"Tile{name}ByteWidth\tequ\t{tileByteWidth}");
+            _writer.WriteCode(Code.Def, $"Tile{name}Height\tequ\t{tileHeight}");
+            _writer.WriteCode(Code.Def, $"Tile{name}Planes\tequ\t{_planeCount}");
 
             _writer.StartObject(ObjectType.Tile, name);
             _writer.WriteBlob(destination);

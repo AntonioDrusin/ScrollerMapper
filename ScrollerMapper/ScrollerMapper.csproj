@@ -65,6 +65,7 @@
     <Compile Include="BitmapExtensions.cs" />
     <Compile Include="BitplaneRenderers\BinaryBitplaneRenderer.cs" />
     <Compile Include="ConversionException.cs" />
+    <Compile Include="Converters\SpritesConverter.cs" />
     <Compile Include="TileRenderers\BinaryTileRenderer.cs" />
     <Compile Include="Writers\IWriter.cs" />
     <Compile Include="Transformers\BitmapTransformer.cs" />
@@ -75,14 +76,14 @@
     <Compile Include="LayerInfoRenderers\ILayerInfoRenderer.cs" />
     <Compile Include="LayerInfoRenderers\LayerInfoBinaryRenderer.cs" />
     <Compile Include="TileRenderers\ITileRenderer.cs" />
-    <Compile Include="TileSetConverters\ITileSetConverter.cs" />
+    <Compile Include="Converters\IConverter.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="PaletteRenderers\BinaryPaletteRenderer.cs" />
     <Compile Include="PaletteRenderers\IPaletteRenderer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamExtensions\StreamExtension.cs" />
-    <Compile Include="TileSetConverters\TileSetConverter.cs" />
+    <Compile Include="Converters\TiledConverter.cs" />
     <Compile Include="LevelDefinition.cs" />
     <Compile Include="Writers\ObjectType.cs" />
   </ItemGroup>

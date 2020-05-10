@@ -3,27 +3,24 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using ScrollerMapper.ImageRenderers;
 using ScrollerMapper.LayerInfoRenderers;
 using ScrollerMapper.PaletteRenderers;
 using ScrollerMapper.TileRenderers;
 
 namespace ScrollerMapper
 {
-    internal class TileSetConverter : ITileSetConverter
+    internal class TiledConverter : IConverter
     {
-        private readonly Options _options;
+        private readonly TileOptions _options;
         private readonly IPaletteRenderer _paletteRenderer;
         private readonly ILayerInfoRenderer _layerRenderer;
-        private readonly IBitplaneRenderer _bitplaneRenderer;
         private readonly ITileRenderer _tileRenderer;
 
-        public TileSetConverter(Options options, IPaletteRenderer paletteRenderer, ILayerInfoRenderer layerRenderer, IBitplaneRenderer bitplaneRenderer, ITileRenderer tileRenderer)
+        public TiledConverter(TileOptions options, IPaletteRenderer paletteRenderer, ILayerInfoRenderer layerRenderer, ITileRenderer tileRenderer)
         {
             _options = options;
             _paletteRenderer = paletteRenderer;
             _layerRenderer = layerRenderer;
-            _bitplaneRenderer = bitplaneRenderer;
             _tileRenderer = tileRenderer;
         }
 
@@ -46,7 +43,6 @@ namespace ScrollerMapper
 
                 var image = LoadBitmap(tileSet);
                 _paletteRenderer.Render(tileSet.Name, image.Palette, _options.PlaneCount.PowerOfTwo());
-                _bitplaneRenderer.Render(tileSet.Name, image);
                 _tileRenderer.Render(tileSet.Name, image, tileWidth, tileHeight );
             }
 
@@ -55,8 +51,6 @@ namespace ScrollerMapper
                 _layerRenderer.Render(layer,_options.PlaneCount, tileWidth, tileHeight);
             }
         }
-
-
 
         private static readonly List<PixelFormat> supportedFormats = new List<PixelFormat>
             {PixelFormat.Format1bppIndexed, PixelFormat.Format4bppIndexed, PixelFormat.Format8bppIndexed};

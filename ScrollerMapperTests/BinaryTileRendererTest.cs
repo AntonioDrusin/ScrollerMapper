@@ -20,7 +20,7 @@ namespace ScrollerMapperTests
         {
             _transformerMock = new Mock<IBitmapTransformer>();
             _writer = new MockWriter();
-            var options = new Options {PlaneCount = 2};
+            var options = new TileOptions {PlaneCount = 2};
             _renderer = new BinaryTileRenderer(options, _transformerMock.Object, _writer);
         }
 

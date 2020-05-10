@@ -7,11 +7,11 @@ namespace ScrollerMapper.ImageRenderers
 {
     internal class BinaryBitplaneRenderer : IBitplaneRenderer
     {
-        private readonly Options _options;
+        private readonly TileOptions _options;
         private readonly IWriter _writer;
         private readonly IBitmapTransformer _transformer;
 
-        public BinaryBitplaneRenderer(Options options, IWriter writer, IBitmapTransformer transformer)
+        public BinaryBitplaneRenderer(TileOptions options, IWriter writer, IBitmapTransformer transformer)
         {
             _options = options;
             _writer = writer;

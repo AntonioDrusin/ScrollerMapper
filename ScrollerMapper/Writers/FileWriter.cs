@@ -7,40 +7,47 @@ namespace ScrollerMapper
 {
     internal class FileWriter : IWriter, IDisposable
     {
-        private readonly Options _options;
-        private readonly Lazy<IndentedTextWriter> _textWriter;
+        private readonly BaseOptions _options;
+        private readonly Lazy<IndentedTextWriter> _chipWriter;
+        private readonly Lazy<IndentedTextWriter> _constantWriter;
         private BinaryWriter _currentWriter;
 
-        private IndentedTextWriter TextWriter => _textWriter.Value;
+        private IndentedTextWriter ChipWriter => _chipWriter.Value;
+        private IndentedTextWriter ConstantsWriter => _chipWriter.Value;
 
-        public FileWriter(Options options)
+        public FileWriter(BaseOptions options)
         {
             _options = options;
 
-            var mainFileName = GetFileNameFor(ObjectType.Assembly, Path.GetFileNameWithoutExtension(options.TileFileName));
-            _textWriter =
-                new Lazy<IndentedTextWriter>(() =>
-                    new IndentedTextWriter(new StreamWriter(File.Create(mainFileName)), "\t"));
+            _chipWriter = CreateCodeFile("_chip");
+            _constantWriter = CreateCodeFile("_def");
+        }
+
+        private Lazy<IndentedTextWriter> CreateCodeFile(string postFix)
+        {
+            var fileName = GetFileNameFor(ObjectType.Assembly, _options.OutputName + postFix);
+            return new Lazy<IndentedTextWriter>(() =>
+                new IndentedTextWriter(new StreamWriter(File.Create(fileName)), "\t"));
         }
 
         public void StartObject(ObjectType type, string name)
         {
             var fileName = GetFileNameFor(type, name);
-            TextWriter.WriteLine($"{name}{GetLabelPostfix(type)}:");
-            TextWriter.Indent++;
-            TextWriter.WriteLine($"incbin {Path.GetFileName(fileName)}");
+            ChipWriter.WriteLine($"{name}{GetLabelPostfix(type)}:");
+            ChipWriter.Indent++;
+            ChipWriter.WriteLine($"incbin {Path.GetFileName(fileName)}");
 
             _currentWriter = new BinaryWriter(File.Create(fileName));
         }
 
         public void CompleteObject()
         {
-            TextWriter.WriteLine("even");
-            TextWriter.Indent--;
-            TextWriter.WriteLine();
+            ChipWriter.WriteLine("even");
+            ChipWriter.Indent--;
+            ChipWriter.WriteLine();
             _currentWriter?.Dispose();
             _currentWriter = null;
-            TextWriter.Flush();
+            ChipWriter.Flush();
         }
 
         public void WriteByte(byte data)
@@ -63,17 +70,28 @@ namespace ScrollerMapper
             _currentWriter.Write(data);
         }
 
-        public void WriteCode(string code)
+        public void WriteCode(Code codeType, string code)
         {
-            TextWriter.WriteLine(code);
+            switch ( codeType)
+            {
+                case Code.Chip:
+                    ChipWriter.WriteLine(code);
+                    break;
+                case Code.Def:
+                    ConstantsWriter.WriteLine(code);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(codeType), codeType, null);
+            }
+            
         }
 
         public void Dispose()
         {
-            if (_textWriter.IsValueCreated)
+            if (_chipWriter.IsValueCreated)
             {
-                _textWriter.Value.Close();
-                _textWriter.Value.Dispose();
+                _chipWriter.Value.Close();
+                _chipWriter.Value.Dispose();
             }
 
             _currentWriter?.Dispose();
@@ -85,7 +103,7 @@ namespace ScrollerMapper
             switch (type)
             {
                 case ObjectType.Assembly:
-                    extension = "S";
+                    extension = "s";
                     break;
                 case ObjectType.Palette:
                     extension = "PAL";
@@ -106,7 +124,7 @@ namespace ScrollerMapper
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
-            if (name == null) name = Path.GetFileNameWithoutExtension(_options.TileFileName);
+            if (name == null) name = _options.OutputName;
             return Path.Combine(_options.OutputFolder, $"{name}.{extension}");
         }
 

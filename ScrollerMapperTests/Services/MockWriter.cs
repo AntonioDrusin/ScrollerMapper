@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using ScrollerMapper;
 using ScrollerMapper.StreamExtensions;
 
@@ -40,9 +39,9 @@ namespace ScrollerMapperTests.Services
             _stream.Write(data, 0, data.Length);
         }
 
-        public void WriteCode(string code)
+        public void WriteCode(Code codeType, string code)
         {
-            throw new NotImplementedException();
         }
+
     }
 }

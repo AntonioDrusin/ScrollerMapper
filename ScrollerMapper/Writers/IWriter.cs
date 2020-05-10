@@ -1,5 +1,11 @@
 ﻿namespace ScrollerMapper
 {
+    internal enum Code
+    {
+        Chip,
+        Def
+    }
+
     internal interface IWriter
     {
         void StartObject(ObjectType type, string name);
@@ -8,6 +14,6 @@
         void WriteWord(ushort data);
         void WriteLong(uint data);
         void WriteBlob(byte[] data);
-        void WriteCode(string code);
+        void WriteCode(Code codeType, string code);
     }
 }
