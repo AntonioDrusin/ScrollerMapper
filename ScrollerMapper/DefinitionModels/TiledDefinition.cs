@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Xml;
-using System.Xml.Linq;
 using System.Xml.Serialization;
 
 namespace ScrollerMapper
@@ -49,8 +46,6 @@ namespace ScrollerMapper
 
         public static TiledDefinition Load(string mapFileName)
         {
-            var result = new TiledDefinition();
-
             var definition = mapFileName.ReadXmlFile<TiledMap>();
 
             return new TiledDefinition
@@ -70,8 +65,8 @@ namespace ScrollerMapper
 
         private static List<int> ConvertFromCsv(string csv)
         {
-            var nums = csv.Replace("\n", "").Split(',');
-            return nums.Select(n => int.Parse(n)).ToList();
+            var numbers = csv.Replace("\n", "").Split(',');
+            return numbers.Select(int.Parse).ToList();
         }
 
     }
