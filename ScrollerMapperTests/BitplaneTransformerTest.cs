@@ -26,7 +26,7 @@ namespace ScrollerMapperTests
 
             var result = _transformer.GetByteWidth();
 
-            Assert.AreEqual(4, result);
+            Assert.AreEqual(2, result);
         }
 
 

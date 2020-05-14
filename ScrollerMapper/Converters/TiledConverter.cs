@@ -1,69 +1,51 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Linq;
+﻿using System.Linq;
+using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.LayerInfoRenderers;
 using ScrollerMapper.PaletteRenderers;
 using ScrollerMapper.TileRenderers;
 
-namespace ScrollerMapper
+namespace ScrollerMapper.Converters
 {
-    internal class TiledConverter : IConverter
+    internal class TiledConverter
     {
-        private readonly TileOptions _options;
         private readonly IPaletteRenderer _paletteRenderer;
         private readonly ILayerInfoRenderer _layerRenderer;
         private readonly ITileRenderer _tileRenderer;
 
-        public TiledConverter(TileOptions options, IPaletteRenderer paletteRenderer, ILayerInfoRenderer layerRenderer, ITileRenderer tileRenderer)
+        public TiledConverter(
+            IPaletteRenderer paletteRenderer,
+            ILayerInfoRenderer layerRenderer,
+            ITileRenderer tileRenderer)
         {
-            _options = options;
             _paletteRenderer = paletteRenderer;
             _layerRenderer = layerRenderer;
             _tileRenderer = tileRenderer;
         }
 
-        public void ConvertAll()
+        public void ConvertAll(string name, TiledTileDefinition definition)
         {
-            var definition = LevelDefinition.Load(_options.TileFileName);
-            int tileWidth = definition.TileSets.First().TileWidth;
-            int tileHeight = definition.TileSets.First().TileHeight;
+            var tiled = TiledDefinition.Load(definition.TiledFile);
+            int tileWidth = tiled.TileSet.TileWidth;
+            int tileHeight = tiled.TileSet.TileHeight;
 
-            foreach (var tileSet in definition.TileSets)
+            var tileSet = tiled.TileSet;
+            if (tileSet.TileHeight != tileHeight)
             {
-                if (tileSet.TileHeight != tileHeight)
-                {
-                    throw new ConversionException("All tiles sets must have tiles of the same height.");
-                }
-                if (tileSet.TileWidth!= tileWidth)
-                {
-                    throw new ConversionException("All tiles sets must have tiles of the same width.");
-                }
-
-                var image = LoadBitmap(tileSet);
-                _paletteRenderer.Render(tileSet.Name, image.Palette, _options.PlaneCount.PowerOfTwo());
-                _tileRenderer.Render(tileSet.Name, image, tileWidth, tileHeight );
+                throw new ConversionException("All tiles sets must have tiles of the same height.");
             }
 
-            foreach (var layer in definition.Layers)
+            if (tileSet.TileWidth != tileWidth)
             {
-                _layerRenderer.Render(layer,_options.PlaneCount, tileWidth, tileHeight);
-            }
-        }
-
-        private static readonly List<PixelFormat> supportedFormats = new List<PixelFormat>
-            {PixelFormat.Format1bppIndexed, PixelFormat.Format4bppIndexed, PixelFormat.Format8bppIndexed};
-
-        private Bitmap LoadBitmap(TileSetDefinition tileSet)
-        {
-            var bitmap = new Bitmap(tileSet.ImageFileName.FromFolderOf(_options.TileFileName));
-            if (!supportedFormats.Contains(bitmap.PixelFormat))
-            {
-                throw new InvalidOperationException("Only indexed formats are supported");
+                throw new ConversionException("All tiles sets must have tiles of the same width.");
             }
 
-            return bitmap;
+            var image = tileSet.ImageFileName.LoadBitmap();
+            _paletteRenderer.Render(tileSet.Name, image.Palette, definition.PlaneCount.PowerOfTwo());
+            _tileRenderer.Render(tileSet.Name, image, tileWidth, tileHeight, definition.PlaneCount);
+
+            var layer = tiled.Layer;
+
+            _layerRenderer.Render(layer, definition.PlaneCount, tileWidth, tileHeight);
         }
     }
 }

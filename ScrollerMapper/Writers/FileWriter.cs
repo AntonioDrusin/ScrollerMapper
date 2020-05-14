@@ -7,25 +7,25 @@ namespace ScrollerMapper
 {
     internal class FileWriter : IWriter, IDisposable
     {
-        private readonly BaseOptions _options;
+        private readonly Options _options;
         private readonly Lazy<IndentedTextWriter> _chipWriter;
         private readonly Lazy<IndentedTextWriter> _constantWriter;
         private BinaryWriter _currentWriter;
 
         private IndentedTextWriter ChipWriter => _chipWriter.Value;
-        private IndentedTextWriter ConstantsWriter => _chipWriter.Value;
+        private IndentedTextWriter NormalWriter => _chipWriter.Value;
 
-        public FileWriter(BaseOptions options)
+        public FileWriter(Options options)
         {
             _options = options;
 
             _chipWriter = CreateCodeFile("_chip");
-            _constantWriter = CreateCodeFile("_def");
+            _constantWriter = CreateCodeFile("");
         }
 
         private Lazy<IndentedTextWriter> CreateCodeFile(string postFix)
         {
-            var fileName = GetFileNameFor(ObjectType.Assembly, _options.OutputName + postFix);
+            var fileName = GetFileNameFor(ObjectType.Assembly, Path.GetFileNameWithoutExtension(_options.InputFile) + postFix);
             return new Lazy<IndentedTextWriter>(() =>
                 new IndentedTextWriter(new StreamWriter(File.Create(fileName)), "\t"));
         }
@@ -72,18 +72,17 @@ namespace ScrollerMapper
 
         public void WriteCode(Code codeType, string code)
         {
-            switch ( codeType)
+            switch (codeType)
             {
                 case Code.Chip:
                     ChipWriter.WriteLine(code);
                     break;
-                case Code.Def:
-                    ConstantsWriter.WriteLine(code);
+                case Code.Normal:
+                    NormalWriter.WriteLine(code);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(codeType), codeType, null);
             }
-            
         }
 
         public void Dispose()
@@ -124,7 +123,7 @@ namespace ScrollerMapper
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
-            if (name == null) name = _options.OutputName;
+            if (name == null) name = Path.GetFileNameWithoutExtension(_options.InputFile);
             return Path.Combine(_options.OutputFolder, $"{name}.{extension}");
         }
 

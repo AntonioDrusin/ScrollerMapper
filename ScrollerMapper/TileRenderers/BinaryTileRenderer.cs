@@ -7,13 +7,11 @@ namespace ScrollerMapper.TileRenderers
     {
         private readonly IBitmapTransformer _transformer;
         private readonly IWriter _writer;
-        private readonly int _planeCount;
 
-        public BinaryTileRenderer(TileOptions options, IBitmapTransformer transformer, IWriter writer)
+        public BinaryTileRenderer(IBitmapTransformer transformer, IWriter writer)
         {
             _transformer = transformer;
             _writer = writer;
-            _planeCount = options.PlaneCount;
         }
 
         /// <summary>
@@ -23,7 +21,7 @@ namespace ScrollerMapper.TileRenderers
         /// <param name="bitmap"></param>
         /// <param name="tileWidth"></param>
         /// <param name="tileHeight"></param>
-        public void Render(string name, Bitmap bitmap, int tileWidth, int tileHeight)
+        public void Render(string name, Bitmap bitmap, int tileWidth, int tileHeight, int planeCount)
         {
             if (tileWidth % 8 != 0)
                 throw new ConversionException($"Tile rendering {name}. Tile width must be a multiple of 8.");
@@ -37,9 +35,9 @@ namespace ScrollerMapper.TileRenderers
             var byteWidth = _transformer.GetByteWidth();
             var height = _transformer.GetHeight();
             var tileByteWidth = tileWidth / 8;
-            var tileSize = tileByteWidth * tileHeight * _planeCount;
+            var tileSize = tileByteWidth * tileHeight * planeCount;
 
-            var data = _transformer.GetBitplanes(_planeCount);
+            var data = _transformer.GetBitplanes(planeCount);
             var destination = new byte[data.Length + tileSize]; // For one blank tile at the beginning
             var bplSize = byteWidth * height;
 
@@ -50,16 +48,16 @@ namespace ScrollerMapper.TileRenderers
                 {
                     for (int tileRow = 0; tileRow < tileHeight; tileRow++)
                     {
-                        for (int bpl = 0; bpl < _planeCount; bpl++)
+                        for (int bpl = 0; bpl < planeCount; bpl++)
                         {
                             var src = tileX * tileByteWidth
                                       + tileY * tileHeight * byteWidth
                                       + bpl * bplSize
                                       + tileRow * byteWidth;
 
-                            var dst = tileByteWidth * tileHeight * _planeCount * tileCounter
+                            var dst = tileByteWidth * tileHeight * planeCount * tileCounter
                                       + bpl * tileByteWidth
-                                      + tileRow * tileByteWidth * _planeCount
+                                      + tileRow * tileByteWidth * planeCount
                                       + tileSize // One blank tile at the beginning
                                 ;
 
@@ -79,12 +77,12 @@ namespace ScrollerMapper.TileRenderers
             _writer.WriteCode(Code.Chip,
                 "; The first tile is all zeros and is to be used when Tiled does not have a tile assigned.");
             _writer.WriteCode(Code.Chip,
-                $"; Tiles are {tileByteWidth} byte wide, {tileHeight} pixel tall and have {_planeCount} biplanes");
+                $"; Tiles are {tileByteWidth} byte wide, {tileHeight} pixel tall and have {planeCount} biplanes");
 
-            _writer.WriteCode(Code.Def, $"; Tile definitions for {name}");
-            _writer.WriteCode(Code.Def, $"Tile{name}ByteWidth\tequ\t{tileByteWidth}");
-            _writer.WriteCode(Code.Def, $"Tile{name}Height\tequ\t{tileHeight}");
-            _writer.WriteCode(Code.Def, $"Tile{name}Planes\tequ\t{_planeCount}");
+            _writer.WriteCode(Code.Normal, $"; Tile definitions for {name}");
+            _writer.WriteCode(Code.Normal, $"Tile{name}ByteWidth\tequ\t{tileByteWidth}");
+            _writer.WriteCode(Code.Normal, $"Tile{name}Height\tequ\t{tileHeight}");
+            _writer.WriteCode(Code.Normal, $"Tile{name}PlaneCount\tequ\t{planeCount}");
 
             _writer.StartObject(ObjectType.Tile, name);
             _writer.WriteBlob(destination);

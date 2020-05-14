@@ -1,15 +1,9 @@
-﻿using System;
-
-namespace ScrollerMapper.Converters
+﻿namespace ScrollerMapper.Converters
 {
-    internal class SpritesConverter : IConverter
+    internal class SpritesConverter 
     {
-
-        private readonly SpritesOptions _options;
-
-        public SpritesConverter(SpritesOptions options)
+        public SpritesConverter()
         {
-            _options = options;
         }
 
         public void ConvertAll()

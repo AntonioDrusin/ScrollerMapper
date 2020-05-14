@@ -3,7 +3,7 @@
     internal enum Code
     {
         Chip,
-        Def
+        Normal
     }
 
     internal interface IWriter

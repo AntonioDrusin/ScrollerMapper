@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using Castle.MicroKernel.Registration;
 using Castle.Windsor;
@@ -18,13 +19,16 @@ namespace ScrollerMapper
         {
             var container = new WindsorContainer();
 
-            Parser.Default.ParseArguments<SpritesOptions, TileOptions>(args)
-                .WithParsed<TileOptions>(o =>
+            Parser.Default.ParseArguments<Options>(args)
+                .WithParsed<Options>(o =>
                 {
                     container.Register(
-                        Component.For<TileOptions, BaseOptions>().Instance(o),
+                        Classes.FromThisAssembly()
+                            .IncludeNonPublicTypes()
+                            .InNamespace("ScrollerMapper.Converters")
+                            .WithServiceSelf(),
+                        Component.For<Options>().Instance(o),
                         Component.For<IPaletteRenderer>().ImplementedBy<BinaryPaletteRenderer>(),
-                        Component.For<IConverter>().ImplementedBy<TiledConverter>(),
                         Component.For<ILayerInfoRenderer>().ImplementedBy<LayerInfoBinaryRenderer>(),
                         Component.For<IWriter>().ImplementedBy<FileWriter>(),
                         Component.For<IBitplaneRenderer>().ImplementedBy<BinaryBitplaneRenderer>(),
@@ -33,24 +37,22 @@ namespace ScrollerMapper
                     );
                     ExecuteConverter(container, o);
                 })
-                .WithParsed<SpritesOptions>(o =>
-                {
-                    container.Register(
-                        Component.For<SpritesOptions>().Instance(o),
-                        Component.For<IWriter>().ImplementedBy<FileWriter>(),
-                        Component.For<IConverter>().ImplementedBy<SpritesConverter>());
-
-                        ExecuteConverter(container, o);
-                });
+                .WithNotParsed((e) => { Environment.ExitCode = -1; });
         }
 
-        private static void ExecuteConverter(WindsorContainer container, BaseOptions o)
+        private static void ExecuteConverter(WindsorContainer container, Options o)
         {
-            var converter = container.Resolve<IConverter>();
+            var converter = container.Resolve<LevelConverter>();
 
             if (!Directory.Exists(o.OutputFolder))
             {
                 Directory.CreateDirectory(o.OutputFolder);
+            }
+
+            var sourcePath = Path.GetDirectoryName(Path.GetFullPath(o.InputFile));
+            if (sourcePath != null)
+            {
+                Directory.SetCurrentDirectory(sourcePath);
             }
 
             try

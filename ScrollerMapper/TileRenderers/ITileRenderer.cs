@@ -4,6 +4,6 @@ namespace ScrollerMapper.TileRenderers
 {
     internal interface ITileRenderer
     {
-        void Render(string name, Bitmap bitmap, int tileWidth, int tileHeight);
+        void Render(string name, Bitmap bitmap, int tileWidth, int tileHeight, int planeCount);
     }
 }

@@ -28,7 +28,7 @@ namespace ScrollerMapper.Transformers
 
         private int RoundUp(int bytes)
         {
-            var requiredWords = ((bytes / 2) + 1);
+            var requiredWords = (bytes+1) / 2;
             return requiredWords * 2;
         }
 

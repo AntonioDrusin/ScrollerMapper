@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using Moq;
 using NUnit.Framework;
-using ScrollerMapper;
 using ScrollerMapper.TileRenderers;
 using ScrollerMapper.Transformers;
 using ScrollerMapperTests.Services;
@@ -20,8 +19,7 @@ namespace ScrollerMapperTests
         {
             _transformerMock = new Mock<IBitmapTransformer>();
             _writer = new MockWriter();
-            var options = new TileOptions {PlaneCount = 2};
-            _renderer = new BinaryTileRenderer(options, _transformerMock.Object, _writer);
+            _renderer = new BinaryTileRenderer(_transformerMock.Object, _writer);
         }
 
         [Test]
@@ -48,7 +46,7 @@ namespace ScrollerMapperTests
             _transformerMock.Setup(f => f.GetByteWidth()).Returns(4);
             _transformerMock.Setup(f => f.GetBitplanes(It.Is<int>(n => n == 2))).Returns(planesData);
 
-            _renderer.Render("data", new Bitmap(16 * 2, 4), 16, 2);
+            _renderer.Render("data", new Bitmap(16 * 2, 4), 16, 2, 2);
 
             var expected = new byte[]
             {

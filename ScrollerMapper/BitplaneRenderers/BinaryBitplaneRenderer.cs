@@ -7,18 +7,16 @@ namespace ScrollerMapper.ImageRenderers
 {
     internal class BinaryBitplaneRenderer : IBitplaneRenderer
     {
-        private readonly TileOptions _options;
         private readonly IWriter _writer;
         private readonly IBitmapTransformer _transformer;
 
-        public BinaryBitplaneRenderer(TileOptions options, IWriter writer, IBitmapTransformer transformer)
+        public BinaryBitplaneRenderer(IWriter writer, IBitmapTransformer transformer)
         {
-            _options = options;
             _writer = writer;
             _transformer = transformer;
         }
 
-        public void Render(string name, Bitmap bitmap)
+        public void Render(string name, Bitmap bitmap, int planeCount)
         {
             if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
             {
@@ -29,9 +27,26 @@ namespace ScrollerMapper.ImageRenderers
 
 
             _writer.StartObject(ObjectType.Bitmap, name);
-            _writer.WriteWord((ushort) _transformer.GetByteWidth());
-            _writer.WriteWord((ushort) _transformer.GetHeight());
-            _writer.WriteBlob(_transformer.GetBitplanes(_options.PlaneCount));
+            var byteWidth = _transformer.GetByteWidth();
+            var height = _transformer.GetHeight();
+
+
+            var planes = _transformer.GetBitplanes(planeCount);
+            var interleaved = new byte[planes.Length];
+
+            for (var x = 0; x < height; x++)
+            {
+                for (var p = 0; p < planeCount; p++)
+                    Array.Copy(
+                        planes,
+                        x * byteWidth + p * height * byteWidth,
+                        interleaved,
+                        (x * byteWidth * planeCount) + (p * byteWidth),
+                        byteWidth
+                    );
+            }
+
+            _writer.WriteBlob(interleaved);
             _writer.CompleteObject();
         }
     }
