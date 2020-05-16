@@ -13,7 +13,7 @@ namespace ScrollerMapper
         private BinaryWriter _currentWriter;
 
         private IndentedTextWriter ChipWriter => _chipWriter.Value;
-        private IndentedTextWriter NormalWriter => _chipWriter.Value;
+        private IndentedTextWriter NormalWriter => _constantWriter.Value;
 
         public FileWriter(Options options)
         {
@@ -25,7 +25,8 @@ namespace ScrollerMapper
 
         private Lazy<IndentedTextWriter> CreateCodeFile(string postFix)
         {
-            var fileName = GetFileNameFor(ObjectType.Assembly, Path.GetFileNameWithoutExtension(_options.InputFile) + postFix);
+            var fileName = GetFileNameFor(ObjectType.Assembly,
+                Path.GetFileNameWithoutExtension(_options.InputFile) + postFix);
             return new Lazy<IndentedTextWriter>(() =>
                 new IndentedTextWriter(new StreamWriter(File.Create(fileName)), "\t"));
         }
@@ -40,7 +41,7 @@ namespace ScrollerMapper
             _currentWriter = new BinaryWriter(File.Create(fileName));
         }
 
-        public void CompleteObject()
+        public void EndObject()
         {
             ChipWriter.WriteLine("even");
             ChipWriter.Indent--;
@@ -48,6 +49,7 @@ namespace ScrollerMapper
             _currentWriter?.Dispose();
             _currentWriter = null;
             ChipWriter.Flush();
+            NormalWriter.Flush();
         }
 
         public void WriteByte(byte data)
@@ -93,6 +95,13 @@ namespace ScrollerMapper
                 _chipWriter.Value.Dispose();
             }
 
+            if (_constantWriter.IsValueCreated)
+            {
+                _constantWriter.Value.Close();
+                _constantWriter.Value.Dispose();
+            }
+
+
             _currentWriter?.Dispose();
         }
 
@@ -118,6 +127,9 @@ namespace ScrollerMapper
                     break;
                 case ObjectType.Tile:
                     extension = "TILE";
+                    break;
+                case ObjectType.Bob:
+                    extension = "BOB";
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);

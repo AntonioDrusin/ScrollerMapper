@@ -64,6 +64,7 @@
   <ItemGroup>
     <Compile Include="BitmapExtensions.cs" />
     <Compile Include="BitplaneRenderers\BinaryBitplaneRenderer.cs" />
+    <Compile Include="BitplaneRenderers\BinaryBobRenderer.cs" />
     <Compile Include="ConversionException.cs" />
     <Compile Include="Converters\BobConverter.cs" />
     <Compile Include="Converters\ImageConverter.cs" />
@@ -71,6 +72,7 @@
     <Compile Include="Converters\SpritesConverter.cs" />
     <Compile Include="DefinitionModels\Level.cs" />
     <Compile Include="TileRenderers\BinaryTileRenderer.cs" />
+    <Compile Include="Transformers\IndexedTransformer.cs" />
     <Compile Include="Writers\IWriter.cs" />
     <Compile Include="Transformers\BitmapTransformer.cs" />
     <Compile Include="FileExtensions.cs" />

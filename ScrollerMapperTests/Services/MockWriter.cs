@@ -15,7 +15,7 @@ namespace ScrollerMapperTests.Services
             _stream = new MemoryStream();
         }
 
-        public void CompleteObject()
+        public void EndObject()
         {
         }
 

@@ -2,7 +2,7 @@
   <Settings>
     <AutoEnable>True</AutoEnable>
     <CurrentEngineMode>Run all tests automatically [Global]</CurrentEngineMode>
-    <TestsWindowSplitterDistance>254</TestsWindowSplitterDistance>
+    <TestsWindowSplitterDistance>307</TestsWindowSplitterDistance>
     <TestsWindowTreeLayout>
       <Column>
         <Name>Name</Name>

@@ -32,7 +32,7 @@
                 _writer.WriteWord((ushort)((tileId) * tileWidth * tileHeight * tileBpl / 8));
                 
             }
-            _writer.CompleteObject();
+            _writer.EndObject();
 
         }
 

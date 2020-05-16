@@ -7,6 +7,7 @@
         Bitmap,
         Layer,
         Tile,
-        Assembly
+        Assembly,
+        Bob,
     }
 }

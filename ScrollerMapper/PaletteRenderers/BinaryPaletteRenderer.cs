@@ -25,7 +25,7 @@ namespace ScrollerMapper.PaletteRenderers
                 _writer.WriteWord(colors);
             }
 
-            _writer.CompleteObject();
+            _writer.EndObject();
         }
     }
 }

@@ -4,9 +4,9 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Xml;
-using System.Xml.Linq;
 using System.Xml.Serialization;
 using Newtonsoft.Json;
+using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper
 {
@@ -33,21 +33,28 @@ namespace ScrollerMapper
 
         private static readonly List<PixelFormat> SupportedFormats = new List<PixelFormat>
         {
-            PixelFormat.Format1bppIndexed, 
-            PixelFormat.Format4bppIndexed, 
+            PixelFormat.Format1bppIndexed,
+            PixelFormat.Format4bppIndexed,
             PixelFormat.Format8bppIndexed
         };
 
 
-        public static Bitmap LoadBitmap(this string fileName)
+        public static Bitmap LoadBitmap(this string fileName, ColorPalette palette = null)
         {
             var bitmap = new Bitmap(fileName);
-            if (!SupportedFormats.Contains(bitmap.PixelFormat))
+
+            if (palette == null)
             {
-                throw new InvalidOperationException("Only indexed formats are supported");
+                if (!SupportedFormats.Contains(bitmap.PixelFormat))
+                {
+                    throw new ConversionException("Only indexed formats are supported");
+                }
+
+                return bitmap;
             }
 
-            return bitmap;
+            var transformer = new IndexedTransformer(fileName, bitmap, palette);
+            return transformer.ConvertToIndexed();
         }
     }
 }

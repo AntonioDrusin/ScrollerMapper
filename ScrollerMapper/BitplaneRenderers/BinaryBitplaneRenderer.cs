@@ -47,7 +47,7 @@ namespace ScrollerMapper.ImageRenderers
             }
 
             _writer.WriteBlob(interleaved);
-            _writer.CompleteObject();
+            _writer.EndObject();
         }
     }
 }

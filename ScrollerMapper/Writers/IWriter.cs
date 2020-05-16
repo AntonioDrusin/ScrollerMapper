@@ -9,7 +9,7 @@
     internal interface IWriter
     {
         void StartObject(ObjectType type, string name);
-        void CompleteObject();
+        void EndObject();
         void WriteByte(byte data);
         void WriteWord(ushort data);
         void WriteLong(uint data);

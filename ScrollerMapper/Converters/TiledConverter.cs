@@ -40,8 +40,8 @@ namespace ScrollerMapper.Converters
             }
 
             var image = tileSet.ImageFileName.LoadBitmap();
-            _paletteRenderer.Render(tileSet.Name, image.Palette, definition.PlaneCount.PowerOfTwo());
-            _tileRenderer.Render(tileSet.Name, image, tileWidth, tileHeight, definition.PlaneCount);
+            _paletteRenderer.Render(name, image.Palette, definition.PlaneCount.PowerOfTwo());
+            _tileRenderer.Render(name, image, tileWidth, tileHeight, definition.PlaneCount);
 
             var layer = tiled.Layer;
 

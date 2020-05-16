@@ -27,13 +27,17 @@ namespace ScrollerMapper
                             .IncludeNonPublicTypes()
                             .InNamespace("ScrollerMapper.Converters")
                             .WithServiceSelf(),
+                        Classes.FromThisAssembly()
+                            .IncludeNonPublicTypes()
+                            .InNamespace("ScrollerMapper.Transformers")
+                            .WithServiceAllInterfaces(),
+                        Classes.FromThisAssembly()
+                            .IncludeNonPublicTypes()
+                            .Where(t=>t.Name.EndsWith("Renderer"))
+                            .WithServiceSelf()
+                            .WithServiceAllInterfaces(),
                         Component.For<Options>().Instance(o),
-                        Component.For<IPaletteRenderer>().ImplementedBy<BinaryPaletteRenderer>(),
-                        Component.For<ILayerInfoRenderer>().ImplementedBy<LayerInfoBinaryRenderer>(),
-                        Component.For<IWriter>().ImplementedBy<FileWriter>(),
-                        Component.For<IBitplaneRenderer>().ImplementedBy<BinaryBitplaneRenderer>(),
-                        Component.For<ITileRenderer>().ImplementedBy<BinaryTileRenderer>(),
-                        Component.For<IBitmapTransformer>().ImplementedBy<BitmapTransformer>()
+                        Component.For<IWriter>().ImplementedBy<FileWriter>()
                     );
                     ExecuteConverter(container, o);
                 })
