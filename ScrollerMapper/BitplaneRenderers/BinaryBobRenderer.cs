@@ -1,4 +1,10 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Linq;
+using System.Security.Cryptography;
+using Castle.Core;
 using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper.BitplaneRenderers
@@ -28,28 +34,43 @@ namespace ScrollerMapper.BitplaneRenderers
 
             _transformer.SetBitmap(bitmap);
 
-            var planes = _transformer.GetBitplanes(planeCount);
-            var planesWithCookies = MakeCookies(planes, _transformer.GetByteWidth(), _transformer.GetHeight(),
-                planeCount, bobWidth / 8);
-
             _writer.StartObject(ObjectType.Bob, name);
-            _writer.WriteBlob(planesWithCookies);
+
+            var planes = _transformer.GetBitplanes(planeCount);
+            SaveBobsWithMasks(planes, _transformer.GetByteWidth(), _transformer.GetHeight(),
+                planeCount, bobWidth / 8, 0);
+
+            //_writer.WriteBlob(planesWithCookies);
             _writer.EndObject();
         }
 
 
-        private byte[] MakeCookies(byte[] planes, int byteWidth, int height, int planeCount, int tileByteWidth)
+        private void SaveBobsWithMasks(byte[] planes, int byteWidth, int height, int planeCount, int tileByteWidth, int initialOffset)
         {
             var numTiles = byteWidth / tileByteWidth;
             var tileWordWidth = (tileByteWidth + 1) / 2;
+            var info = new BobData[numTiles];
+
+
+            _writer.WriteWord((ushort)tileWordWidth);
+            initialOffset += 2;
+            _writer.WriteWord((ushort)numTiles);
+            initialOffset += 2;
 
             var result = new byte[numTiles * tileWordWidth * 2 * height * (planeCount*2)];
+            var curRow = 0;
 
             for (int t = 0; t < numTiles; t++)
             {
-                for (int xb = 0; xb < tileByteWidth; xb++)
+                var currentBob = new BobData(); 
+                info[t] = currentBob;
+
+                for (int y = 0; y < height; y++)
                 {
-                    for (int y = 0; y < height; y++)
+                    byte[] rowData = new byte[tileWordWidth*2*planeCount];
+                    byte[] rowMask = new byte[tileWordWidth*2*planeCount];
+
+                    for (int xb = 0; xb < tileByteWidth; xb++)
                     {
                         byte mask = 0;
 
@@ -59,23 +80,103 @@ namespace ScrollerMapper.BitplaneRenderers
                                 t * tileByteWidth + xb + y * byteWidth + bpl * byteWidth * height
                             ];
                             mask |= value;
-                            result[
-                                t * (tileWordWidth * 2) * height * planeCount * 2 + xb + y * (tileWordWidth * 2) * planeCount + bpl * (tileWordWidth * 2)
-                            ] = value;
+                            rowData[xb + bpl * (tileWordWidth * 2)] = value;
+                            curRow++;
                         }
 
                         for (var mPlane = 0; mPlane < planeCount; mPlane++)
                         {
-                            result[
-                                tileWordWidth*2*height*planeCount+
-                                t * (tileWordWidth * 2) * height * planeCount * 2 + xb + y * (tileWordWidth * 2) * planeCount + (mPlane) * (tileWordWidth * 2)
-                            ] = mask;
+                            rowMask[xb +  (mPlane) * (tileWordWidth * 2)] = mask;
                         }
                     }
+
+                    currentBob.PlaneRows.Add(rowData);
+                    currentBob.MaskRows.Add(rowMask);
                 }
             }
 
-            return result;
+            // All Bob info added to the initial offset
+            initialOffset += numTiles * 8; // 8 bytes per tile of information in the header
+
+            AdjustBobs(info, initialOffset);
+            WriteBobs(info);
+
         }
+
+        private void WriteBobs(BobData[] info)
+        {
+            foreach (var bob in info)
+            {
+                _writer.WriteWord((ushort)bob.BobOffset);
+                _writer.WriteWord((ushort)bob.MaskOffset);
+                _writer.WriteWord((ushort)bob.LineCount);
+                _writer.WriteWord((ushort)bob.YAdjustment);
+            }
+
+            foreach (var bob in info)
+            {
+                foreach (var row in bob.PlaneRows)
+                {
+                    _writer.WriteBlob(row);
+                }
+
+                foreach (var row in bob.MaskRows)
+                {
+                    _writer.WriteBlob(row);
+                }
+
+            }
+        }
+
+        private void AdjustBobs(BobData[] info, int offset)
+        {
+            foreach (var bob in info)
+            {
+                bool firstDataEncountered = false;
+                var firstRow=0;
+                var lastRow=0;
+                var currentRow = 0;
+                
+                foreach (var row in bob.PlaneRows)
+                {
+                    var empty = row.All(_ => _ == 0);
+                    if (!firstDataEncountered)
+                    {
+                        firstRow = currentRow;
+                        if (!empty)
+                        {
+                            firstDataEncountered = true;
+                        }
+                    }
+
+                    if (!empty)
+                    {
+                        lastRow = currentRow;
+                    }
+                    currentRow++;
+                }
+
+                bob.LineCount = (short)(lastRow-firstRow+1);
+                bob.YAdjustment =(short)(firstRow);
+                // Remove top and bottom rows with just zeroes
+                bob.PlaneRows = bob.PlaneRows.Skip(firstRow).Take(bob.LineCount).ToList();
+                bob.MaskRows = bob.MaskRows.Skip(firstRow).Take(bob.LineCount).ToList();
+                bob.BobOffset = (short)offset;
+                offset += bob.PlaneRows.Sum(r => r.Length);
+                bob.MaskOffset = (short)offset;
+                offset += bob.MaskRows.Sum(r => r.Length);
+            }
+        }
+
+    }
+
+    internal class BobData
+    {
+        public short LineCount;
+        public short BobOffset;
+        public short MaskOffset;
+        public short YAdjustment;
+        public List<byte[]> PlaneRows = new List<byte[]>();
+        public List<byte[]> MaskRows = new List<byte[]>();
     }
 }
