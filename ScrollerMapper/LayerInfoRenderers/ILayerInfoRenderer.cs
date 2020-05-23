@@ -2,6 +2,6 @@
 {
     internal interface ILayerInfoRenderer
     {
-        void Render(LayerDefinition layer, int tileBpl, int tileWidth, int tileHeight);
+        void Render(string name, LayerDefinition layer, int tileBpl, int tileWidth, int tileHeight);
     }
 }

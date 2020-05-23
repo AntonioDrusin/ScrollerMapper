@@ -45,7 +45,7 @@ namespace ScrollerMapper.Converters
 
             var layer = tiled.Layer;
 
-            _layerRenderer.Render(layer, definition.PlaneCount, tileWidth, tileHeight);
+            _layerRenderer.Render(name, layer, definition.PlaneCount, tileWidth, tileHeight);
         }
     }
 }

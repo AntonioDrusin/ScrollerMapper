@@ -80,9 +80,9 @@ namespace ScrollerMapper.TileRenderers
                 $"; Tiles are {tileByteWidth} byte wide, {tileHeight} pixel tall and have {planeCount} biplanes");
 
             _writer.WriteCode(Code.Normal, $"; Tile definitions for {name}");
-            _writer.WriteCode(Code.Normal, $"TILE_BWIDTH\t\t\tequ\t{tileByteWidth}");
-            _writer.WriteCode(Code.Normal, $"TILE_HEIGHT\t\t\tequ\t{tileHeight}");
-            _writer.WriteCode(Code.Normal, $"TILE_PLANE_COUNT\tequ\t{planeCount}");
+            _writer.WriteCode(Code.Normal, $"TILE_BWIDTH_{name}\t\t\tequ\t{tileByteWidth}");
+            _writer.WriteCode(Code.Normal, $"TILE_HEIGHT_{name}\t\t\tequ\t{tileHeight}");
+            _writer.WriteCode(Code.Normal, $"TILE_PLANE_COUNT_{name}\tequ\t{planeCount}");
 
 
             _writer.StartObject(ObjectType.Tile, name);

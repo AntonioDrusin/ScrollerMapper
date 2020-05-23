@@ -61,7 +61,7 @@ namespace ScrollerMapper.Transformers
             }
 
             converted.SetImageBytes(result);
-            var pick = converted.GetPixel(3, 13);
+            
             if (_missedColor)
             {
                 Console.WriteLine($"Some colors could no be accurately mapped for {_fileName}");

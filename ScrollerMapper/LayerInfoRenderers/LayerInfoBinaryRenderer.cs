@@ -17,13 +17,14 @@
         /// Followed by one word for each tile id
         /// 
         /// </summary>
+        /// <param name="name"></param>
         /// <param name="layer"></param>
         /// <param name="tileBpl"></param>
         /// <param name="tileWidth"></param>
         /// <param name="tileHeight"></param>
-        public void Render(LayerDefinition layer, int tileBpl, int tileWidth, int tileHeight)
+        public void Render(string name, LayerDefinition layer, int tileBpl, int tileWidth, int tileHeight)
         {
-            _writer.StartObject(ObjectType.Layer, null);
+            _writer.StartObject(ObjectType.Layer, name);
             foreach (var tileId in layer.TileIds)
             {
 
