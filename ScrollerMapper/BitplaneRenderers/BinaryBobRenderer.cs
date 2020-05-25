@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Security.Cryptography;
-using Castle.Core;
 using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper.BitplaneRenderers
@@ -40,7 +36,6 @@ namespace ScrollerMapper.BitplaneRenderers
             SaveBobsWithMasks(planes, _transformer.GetByteWidth(), _transformer.GetHeight(),
                 planeCount, bobWidth / 8, 0);
 
-            //_writer.WriteBlob(planesWithCookies);
             _writer.EndObject();
         }
 

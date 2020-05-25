@@ -2,7 +2,7 @@
 {
     internal enum Code
     {
-        Chip,
+        Data,
         Normal
     }
 

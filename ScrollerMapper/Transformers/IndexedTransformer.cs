@@ -40,23 +40,8 @@ namespace ScrollerMapper.Transformers
             {
                 for (int y = 0; y < height; y++)
                 {
-                    byte colorIndex;
                     var color = _bitmap.GetPixel(x, y);
-
-                    if (color.A < 255)
-                    {
-                        colorIndex = 0;
-                    }
-                    else
-                    {
-                        colorIndex = GetClosestColorIndex(color);
-                        if (colorIndex != 6 && colorIndex != 5 && colorIndex != 0 && colorIndex != 1)
-                        {
-                            colorIndex = colorIndex;
-                        }
-                    }
-
-                    result[width * y + x] = colorIndex;
+                    result[width * y + x] = color.A < 255 ? (byte)0 : GetClosestColorIndex(color);
                 }
             }
 

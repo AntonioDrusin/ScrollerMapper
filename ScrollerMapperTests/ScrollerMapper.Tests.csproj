@@ -70,9 +70,12 @@
     <Compile Include="BinaryBobRendererTest.cs" />
     <Compile Include="BinaryTileRendererTest.cs" />
     <Compile Include="BitplaneTransformerTest.cs" />
+    <Compile Include="OutputPathCoalesceTransformerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\MockTransformer.cs" />
     <Compile Include="Services\MockWriter.cs" />
+    <Compile Include="Services\TestExtensions.cs" />
+    <Compile Include="SmoothInputPathTransformerTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

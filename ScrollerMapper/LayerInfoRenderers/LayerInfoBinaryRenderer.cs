@@ -25,6 +25,8 @@
         public void Render(string name, LayerDefinition layer, int tileBpl, int tileWidth, int tileHeight)
         {
             _writer.StartObject(ObjectType.Layer, name);
+            _writer.WriteCode(Code.Normal, $"LAYER_WIDTH_{name.ToUpperInvariant()}\t\tequ\t{layer.Width}");
+            _writer.WriteCode(Code.Normal, $"LAYER_HEIGHT_{name.ToUpperInvariant()}\t\tequ\t{layer.Height}");
             foreach (var tileId in layer.TileIds)
             {
 

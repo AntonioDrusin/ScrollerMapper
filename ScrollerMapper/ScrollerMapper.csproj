@@ -68,11 +68,14 @@
     <Compile Include="ConversionException.cs" />
     <Compile Include="Converters\BobConverter.cs" />
     <Compile Include="Converters\ImageConverter.cs" />
+    <Compile Include="Converters\Infos\BobInfo.cs" />
+    <Compile Include="Converters\Infos\OutputPathStepInfo.cs" />
     <Compile Include="Converters\LevelConverter.cs" />
     <Compile Include="Converters\SpritesConverter.cs" />
     <Compile Include="DefinitionModels\Level.cs" />
     <Compile Include="TileRenderers\BinaryTileRenderer.cs" />
     <Compile Include="Transformers\IndexedTransformer.cs" />
+    <Compile Include="Transformers\SmoothInputPathTransformer.cs" />
     <Compile Include="Writers\IWriter.cs" />
     <Compile Include="Transformers\BitmapTransformer.cs" />
     <Compile Include="FileExtensions.cs" />

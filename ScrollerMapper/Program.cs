@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using Castle.MicroKernel.Registration;
 using Castle.Windsor;
 using CommandLine;
 using ScrollerMapper.Converters;
-using ScrollerMapper.ImageRenderers;
-using ScrollerMapper.PaletteRenderers;
-using ScrollerMapper.LayerInfoRenderers;
-using ScrollerMapper.TileRenderers;
-using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper
 {
@@ -63,6 +57,7 @@ namespace ScrollerMapper
             {
                 converter.ConvertAll();
                 container.Release(converter); // disposes objects
+                container.Dispose();
             }
             catch (ConversionException ex)
             {

@@ -73,16 +73,16 @@ namespace ScrollerMapper.TileRenderers
                 }
             }
 
-            _writer.WriteCode(Code.Chip, "; Tiles are in interlaced format one after another.");
-            _writer.WriteCode(Code.Chip,
+            _writer.WriteCode(Code.Data, "; Tiles are in interlaced format one after another.");
+            _writer.WriteCode(Code.Data,
                 "; The first tile is all zeros and is to be used when Tiled does not have a tile assigned.");
-            _writer.WriteCode(Code.Chip,
+            _writer.WriteCode(Code.Data,
                 $"; Tiles are {tileByteWidth} byte wide, {tileHeight} pixel tall and have {planeCount} biplanes");
 
             _writer.WriteCode(Code.Normal, $"; Tile definitions for {name}");
-            _writer.WriteCode(Code.Normal, $"TILE_BWIDTH_{name}\t\t\tequ\t{tileByteWidth}");
-            _writer.WriteCode(Code.Normal, $"TILE_HEIGHT_{name}\t\t\tequ\t{tileHeight}");
-            _writer.WriteCode(Code.Normal, $"TILE_PLANE_COUNT_{name}\tequ\t{planeCount}");
+            _writer.WriteCode(Code.Normal, $"TILE_BWIDTH_{name.ToUpperInvariant()}\t\t\tequ\t{tileByteWidth}");
+            _writer.WriteCode(Code.Normal, $"TILE_HEIGHT_{name.ToUpperInvariant()}\t\t\tequ\t{tileHeight}");
+            _writer.WriteCode(Code.Normal, $"TILE_PLANE_COUNT_{name.ToUpperInvariant()}\tequ\t{planeCount}");
 
 
             _writer.StartObject(ObjectType.Tile, name);

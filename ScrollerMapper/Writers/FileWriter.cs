@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.IO;
+using System.Xml;
 using ScrollerMapper.StreamExtensions;
 
 namespace ScrollerMapper
@@ -19,7 +20,7 @@ namespace ScrollerMapper
         {
             _options = options;
 
-            _chipWriter = CreateCodeFile("_chip");
+            _chipWriter = CreateCodeFile("_data");
             _constantWriter = CreateCodeFile("");
         }
 
@@ -34,11 +35,49 @@ namespace ScrollerMapper
         public void StartObject(ObjectType type, string name)
         {
             var fileName = GetFileNameFor(type, name);
+            DataSection(type);
             ChipWriter.WriteLine($"{name}{GetLabelPostfix(type)}:");
             ChipWriter.Indent++;
             ChipWriter.WriteLine($"incbin {Path.GetFileName(fileName)}");
 
             _currentWriter = new BinaryWriter(File.Create(fileName));
+        }
+
+        private void DataSection(ObjectType type)
+        {
+            bool isChip = false;
+
+            switch (type)
+            {
+                case ObjectType.Palette:
+                    break;
+                case ObjectType.TileInfo:
+                    break;
+                case ObjectType.Bitmap:
+                    isChip = true;
+                    break;
+                case ObjectType.Layer:
+                    break;
+                case ObjectType.Tile:
+                    isChip = true;
+                    break;
+                case ObjectType.Assembly:
+                    break;
+                case ObjectType.Bob:
+                    isChip = true;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
+
+            if (isChip)
+            {
+                ChipWriter.WriteLine("\tsection\t\tdatachip,data_c");
+            }
+            else
+            {
+                ChipWriter.WriteLine("\tsection\t\tdata");
+            }
         }
 
         public void EndObject()
@@ -76,7 +115,7 @@ namespace ScrollerMapper
         {
             switch (codeType)
             {
-                case Code.Chip:
+                case Code.Data:
                     ChipWriter.WriteLine(code);
                     break;
                 case Code.Normal:
