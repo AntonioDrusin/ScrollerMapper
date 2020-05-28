@@ -48,10 +48,7 @@ namespace ScrollerMapper
             }
 
             var sourcePath = Path.GetDirectoryName(Path.GetFullPath(o.InputFile));
-            if (sourcePath != null)
-            {
-                Directory.SetCurrentDirectory(sourcePath);
-            }
+            FileExtensions.SetSourceFolder(sourcePath);
 
             try
             {

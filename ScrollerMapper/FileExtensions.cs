@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -12,6 +11,18 @@ namespace ScrollerMapper
 {
     internal static class FileExtensions
     {
+        private static string _sourceRootFolder;
+
+        public static void SetSourceFolder(string folder)
+        {
+            _sourceRootFolder = folder;
+        }
+
+        public static string FromInputFolder(this string fileName)
+        {
+            return Path.IsPathRooted(fileName) ? fileName : Path.Combine(_sourceRootFolder, fileName);
+        }
+
         public static T ReadJsonFile<T>(this string fileName)
         {
             using (TextReader file = File.OpenText(fileName))

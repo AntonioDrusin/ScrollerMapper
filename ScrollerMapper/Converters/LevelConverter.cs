@@ -55,7 +55,7 @@ namespace ScrollerMapper.Converters
             WriteBobComments();
 
 
-            var bobPalette = definition.BobPaletteFile.LoadBitmap();
+            var bobPalette = definition.BobPaletteFile.FromInputFolder().LoadBitmap();
             ConvertBobPalette(bobPalette.Palette, definition);
 
             _bobs = new Dictionary<string, BobInfo>();
@@ -200,6 +200,8 @@ PATH_STRUCT_SIZE    equ     4
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.StartXOffset},{wave.StartYOffset}");
 
             }
+            _writer.WriteCode(Code.Normal, "; final wave past the end of the universe");
+            _writer.WriteCode(Code.Normal, "\t\tdc.w\t\t$7fff\t\t");
         }
 
         private PathInfo GetPathFor(string pathName, string sourceName)

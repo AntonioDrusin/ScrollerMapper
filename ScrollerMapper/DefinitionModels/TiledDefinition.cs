@@ -16,7 +16,7 @@ namespace ScrollerMapper
 
         public static TileSetDefinition Load(string tileFileName)
         {
-            var definition = tileFileName.ReadXmlFile<TiledTileSet>();
+            var definition = tileFileName.FromInputFolder().ReadXmlFile<TiledTileSet>();
             
             return new TileSetDefinition
             {
@@ -46,7 +46,7 @@ namespace ScrollerMapper
 
         public static TiledDefinition Load(string mapFileName)
         {
-            var definition = mapFileName.ReadXmlFile<TiledMap>();
+            var definition = mapFileName.FromInputFolder().ReadXmlFile<TiledMap>();
 
             return new TiledDefinition
             {
