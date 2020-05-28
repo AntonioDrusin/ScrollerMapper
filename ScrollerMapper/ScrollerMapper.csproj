@@ -102,6 +102,6 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(TargetDir)\*.* D:\dev\tools</PostBuildEvent>
+    <PostBuildEvent>copy $(TargetDir)\*.*  $(SolutionDir)\..\toolchain\ToolChain</PostBuildEvent>
   </PropertyGroup>
 </Project>
