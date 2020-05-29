@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Linq;
 using ScrollerMapper.Converters.Infos;
@@ -50,6 +48,14 @@ namespace ScrollerMapper.Converters
                 _imageConverter.ConvertAll(imageDefinition.Key, imageDefinition.Value);
             }
 
+            if (definition.Score != null)
+            {
+                _imageConverter.ConvertAll("ScoreFont", definition.Score.Font);
+                _writer.WriteCode(Code.Normal, $"; Score location");
+                _writer.WriteCode(Code.Normal, $"SCORE_X\t\tequ\t{definition.Score.X}");
+                _writer.WriteCode(Code.Normal, $"SCORE_Y\t\tequ\t{definition.Score.Y}");
+                _imageConverter.ConvertAll("Scoreboard", definition.Score.Scoreboard);
+            }
 
             // Move all of this in its own?
             WriteBobComments();

@@ -52,6 +52,11 @@ namespace ScrollerMapper
 
         public static Bitmap LoadBitmap(this string fileName, ColorPalette palette = null)
         {
+            if (!File.Exists(fileName))
+            {
+                throw new ConversionException($"Cannot file file {fileName} for bitmap.");
+            }
+
             var bitmap = new Bitmap(fileName);
 
             if (palette == null)

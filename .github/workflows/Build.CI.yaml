@@ -1,0 +1,14 @@
+name: Build.CI
+on: [push]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: msbuild /p:PostBuildEvent= /p:Configuration=Release ScrollerMapper.sln
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: scrollerMapper
+        path: ScrollerMapper/bin/Release

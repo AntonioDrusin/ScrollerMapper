@@ -52,9 +52,6 @@ namespace ScrollerMapper.BitplaneRenderers
             _writer.WriteWord((ushort)numTiles);
             initialOffset += 2;
 
-            var result = new byte[numTiles * tileWordWidth * 2 * height * (planeCount*2)];
-            var curRow = 0;
-
             for (int t = 0; t < numTiles; t++)
             {
                 var currentBob = new BobData(); 
@@ -76,7 +73,6 @@ namespace ScrollerMapper.BitplaneRenderers
                             ];
                             mask |= value;
                             rowData[xb + bpl * (tileWordWidth * 2)] = value;
-                            curRow++;
                         }
 
                         for (var mPlane = 0; mPlane < planeCount; mPlane++)

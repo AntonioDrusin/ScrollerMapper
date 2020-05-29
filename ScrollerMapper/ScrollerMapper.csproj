@@ -73,6 +73,7 @@
     <Compile Include="Converters\LevelConverter.cs" />
     <Compile Include="Converters\SpritesConverter.cs" />
     <Compile Include="DefinitionModels\Level.cs" />
+    <Compile Include="BitplaneRenderers\BinaryFontRenderer.cs" />
     <Compile Include="TileRenderers\BinaryTileRenderer.cs" />
     <Compile Include="Transformers\IndexedTransformer.cs" />
     <Compile Include="Transformers\SmoothInputPathTransformer.cs" />

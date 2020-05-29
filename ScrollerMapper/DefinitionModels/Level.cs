@@ -10,8 +10,17 @@ namespace ScrollerMapper.DefinitionModels
         public Dictionary<string, EnemyDefinition> Enemies { get; set; }
         public Dictionary<string, WaveDefinition> Waves { get; set; }
         public Dictionary<string, PathDefinition> Paths { get; set; }
+        public ScoreDefinition Score { get; set; }
         public int BobPlaneCount { get; set; }
         public string BobPaletteFile { get; set; }
+    }
+
+    internal class ScoreDefinition
+    {
+        public ImageDefinition Font { get; set; }
+        public ImageDefinition Scoreboard { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
     }
 
     internal class TiledTileDefinition

@@ -20,8 +20,8 @@ namespace ScrollerMapper.Converters
         {
             var fileName = definition.ImageFile;
             var image = fileName.FromInputFolder().LoadBitmap();
-            _bitplaneRenderer.Render(Path.GetFileNameWithoutExtension(fileName), image, definition.PlaneCount);
-            _paletteRenderer.Render(Path.GetFileNameWithoutExtension(fileName), image.Palette, definition.PlaneCount.PowerOfTwo());
+            _bitplaneRenderer.Render(name, image, definition.PlaneCount);
+            _paletteRenderer.Render(name, image.Palette, definition.PlaneCount.PowerOfTwo());
         }
     }
 }
