@@ -5,6 +5,10 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
+    - name: Setup MsBuild
+      uses: microsoft/setup-msbuild@v1.0.0
+    - name: Restore Packages
+      run: msbuild -t:restore ScrollerMapper.sln
     - name: Build
       run: msbuild /p:PostBuildEvent= /p:Configuration=Release ScrollerMapper.sln
     - name: Upload Artifact
