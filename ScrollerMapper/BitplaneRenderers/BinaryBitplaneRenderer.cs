@@ -27,8 +27,14 @@ namespace ScrollerMapper.ImageRenderers
 
 
             _writer.StartObject(ObjectType.Bitmap, name);
+
+
             var byteWidth = _transformer.GetByteWidth();
             var height = _transformer.GetHeight();
+
+            _writer.WriteCode(Code.Normal, $"{name}_BPL\t\tequ\t{planeCount}");
+            _writer.WriteCode(Code.Normal, $"{name}_BWIDTH\t\tequ\t{byteWidth}");
+            _writer.WriteCode(Code.Normal, $"{name}_MODULO\t\tequ\t{name}_BWIDTH*{name}_BPL");
 
 
             var planes = _transformer.GetBitplanes(planeCount);

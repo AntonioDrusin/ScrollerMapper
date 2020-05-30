@@ -12,7 +12,6 @@ namespace ScrollerMapper
         static void Main(string[] args)
         {
             var container = new WindsorContainer();
-
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed<Options>(o =>
                 {
