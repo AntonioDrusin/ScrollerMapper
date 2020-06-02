@@ -10,6 +10,7 @@ namespace ScrollerMapper.Transformers
         int GetByteWidth();
         int GetHeight();
         byte[] GetBitplanes(int bitplaneCount);
+        byte[] GetInterleaved(int planeCount);
     }
 
     internal class BitmapTransformer : IBitmapTransformer
@@ -78,6 +79,27 @@ namespace ScrollerMapper.Transformers
             }
 
             return converted;
+        }
+
+        public byte[] GetInterleaved(int planeCount)
+        {
+            var planes = GetBitplanes(planeCount);
+            var interleaved = new byte[planes.Length];
+            var height = GetHeight();
+            var byteWidth = GetByteWidth();
+
+            for (var x = 0; x < height; x++)
+            {
+                for (var p = 0; p < planeCount; p++)
+                    Array.Copy(
+                        planes,
+                        x * byteWidth + p * height * byteWidth,
+                        interleaved,
+                        (x * byteWidth * planeCount) + (p * byteWidth),
+                        byteWidth
+                    );
+            }
+            return interleaved;
         }
 
         private static void ValidateBitmap(Bitmap bitmap)

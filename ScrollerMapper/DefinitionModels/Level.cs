@@ -13,6 +13,20 @@ namespace ScrollerMapper.DefinitionModels
         public ScoreDefinition Score { get; set; }
         public int BobPlaneCount { get; set; }
         public string BobPaletteFile { get; set; }
+        public string SpritePaletteFile { get; set; }
+        public PlayerDefinition Player { get; set; }
+    }
+
+    internal class PlayerDefinition
+    {
+        public SpriteDefinition MainSprite { get; set; }
+    }
+
+    internal class SpriteDefinition
+    {
+        public string File { get; set; }
+        public string Palette { get; set; }
+        public string SpriteNumber { get; set; }
     }
 
     internal class ScoreDefinition

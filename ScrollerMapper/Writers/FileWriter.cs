@@ -50,20 +50,14 @@ namespace ScrollerMapper
             switch (type)
             {
                 case ObjectType.Palette:
-                    break;
                 case ObjectType.TileInfo:
-                    break;
-                case ObjectType.Bitmap:
-                    isChip = true;
-                    break;
                 case ObjectType.Layer:
-                    break;
-                case ObjectType.Tile:
-                    isChip = true;
-                    break;
                 case ObjectType.Assembly:
                     break;
+                case ObjectType.Bitmap:
+                case ObjectType.Tile:
                 case ObjectType.Bob:
+                case ObjectType.Sprite:
                     isChip = true;
                     break;
                 default:
@@ -169,6 +163,9 @@ namespace ScrollerMapper
                     break;
                 case ObjectType.Bob:
                     extension = "BOB";
+                    break;
+                case ObjectType.Sprite:
+                    extension = "SPRITE";
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);

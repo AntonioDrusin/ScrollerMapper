@@ -36,19 +36,7 @@ namespace ScrollerMapper.ImageRenderers
             _writer.WriteCode(Code.Normal, $"{name}_BWIDTH\t\tequ\t{byteWidth}");
 
             var planes = _transformer.GetBitplanes(planeCount);
-            var interleaved = new byte[planes.Length];
-
-            for (var x = 0; x < height; x++)
-            {
-                for (var p = 0; p < planeCount; p++)
-                    Array.Copy(
-                        planes,
-                        x * byteWidth + p * height * byteWidth,
-                        interleaved,
-                        (x * byteWidth * planeCount) + (p * byteWidth),
-                        byteWidth
-                    );
-            }
+            var interleaved = _transformer.GetInterleaved(planeCount);
 
             _writer.WriteBlob(interleaved);
             _writer.EndObject();

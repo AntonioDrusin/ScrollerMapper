@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Linq;
+using ScrollerMapper.BitplaneRenderers;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.PaletteRenderers;
@@ -15,6 +16,7 @@ namespace ScrollerMapper.Converters
         private readonly ImageConverter _imageConverter;
         private readonly BobConverter _bobConverter;
         private readonly IPaletteRenderer _paletteRenderer;
+        private readonly SpriteRenderer _spriteRenderer;
         private readonly IWriter _writer;
         private Dictionary<string, BobInfo> _bobs;
         private Dictionary<string, PathInfo> _paths;
@@ -24,24 +26,45 @@ namespace ScrollerMapper.Converters
             Options options,
             TiledConverter tiledConverter,
             ImageConverter imageConverter,
-            BobConverter bobConverter, IPaletteRenderer paletteRenderer, IWriter writer)
+            BobConverter bobConverter,
+            IPaletteRenderer paletteRenderer,
+            SpriteRenderer spriteRenderer,
+            IWriter writer)
         {
             _options = options;
             _tiledConverter = tiledConverter;
             _imageConverter = imageConverter;
             _bobConverter = bobConverter;
             _paletteRenderer = paletteRenderer;
+            _spriteRenderer = spriteRenderer;
             _writer = writer;
         }
 
         public void ConvertAll()
         {
-
             var definition = _options.InputFile.ReadJsonFile<LevelDefinition>();
-            foreach (var tiledDefinition in definition.Tiles)
+            if (definition.Tiles != null)
             {
-                _tiledConverter.ConvertAll(tiledDefinition.Key, tiledDefinition.Value);
+                ConvertTiles(definition);
             }
+
+            if (definition.SpritePaletteFile != null)
+            {
+
+                var paletteBitmap = definition.SpritePaletteFile.FromInputFolder().LoadIndexedBitmap();
+
+                _paletteRenderer.Render("sprite", paletteBitmap.Palette, 16);
+
+                if (definition.Player != null)
+                {
+                    _spriteRenderer.Render("player", definition.Player.MainSprite);
+                }
+            }
+            else if (definition.Player != null)
+            {
+                throw new ConversionException("You must specify a SpritePaletteFile to have a sprite.");
+            }
+
 
             foreach (var imageDefinition in definition.Images)
             {
@@ -60,8 +83,7 @@ namespace ScrollerMapper.Converters
             // Move all of this in its own?
             WriteBobComments();
 
-
-            var bobPalette = definition.BobPaletteFile.FromInputFolder().LoadBitmap();
+            var bobPalette = definition.BobPaletteFile.FromInputFolder().LoadIndexedBitmap();
             ConvertBobPalette(bobPalette.Palette, definition);
 
             _bobs = new Dictionary<string, BobInfo>();
@@ -75,7 +97,7 @@ namespace ScrollerMapper.Converters
             _writer.WriteCode(Code.Normal, "\tsection\tdata");
             _writer.WriteCode(Code.Normal, "\n\n** Pointers to all loaded Bobs\n");
             _writer.WriteCode(Code.Normal, "BobPtrs:");
-            foreach (var bob in _bobs.OrderBy(b=>b.Value.Index))
+            foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
             {
                 _writer.WriteCode(Code.Normal, $"\tdc.l\t{bob.Value.Name}Bob");
             }
@@ -85,8 +107,14 @@ namespace ScrollerMapper.Converters
             WriteEnemies(definition);
             WritePaths(definition.Paths);
             WriteWaves(definition);
+        }
 
-
+        private void ConvertTiles(LevelDefinition definition)
+        {
+            foreach (var tiledDefinition in definition.Tiles)
+            {
+                _tiledConverter.ConvertAll(tiledDefinition.Key, tiledDefinition.Value);
+            }
         }
 
         private void WriteEnemies(LevelDefinition definition)
@@ -110,7 +138,8 @@ namespace ScrollerMapper.Converters
                     throw new ConversionException($"Bob '{enemy.Bob}' for enemy '{enemyKeyValue.Key}' was not found.");
                 }
 
-                _writer.WriteCode(Code.Normal, $"\tdc.b\t{bobForEnemy.Index*4},{enemy.FrameDelay}\t\t; Enemy {enemyKeyValue.Key} offset {offset} bob {enemy.Bob}");
+                _writer.WriteCode(Code.Normal,
+                    $"\tdc.b\t{bobForEnemy.Index * 4},{enemy.FrameDelay}\t\t; Enemy {enemyKeyValue.Key} offset {offset} bob {enemy.Bob}");
                 _writer.WriteCode(Code.Normal, $"\tdc.w\t{enemy.Points}");
                 offset += 4;
                 _enemies.Add(enemyKeyValue.Key, new EnemyInfo {Name = enemyKeyValue.Key, Index = index++});
@@ -119,8 +148,9 @@ namespace ScrollerMapper.Converters
             _writer.WriteCode(Code.Normal, "\n\nEnemyPtr:");
             foreach (var enemy in _enemies)
             {
-                _writer.WriteCode(Code.Normal, $"\t\tdc.l\tEnemies+{enemy.Value.Index*4}\t; {enemy.Key}");
+                _writer.WriteCode(Code.Normal, $"\t\tdc.l\tEnemies+{enemy.Value.Index * 4}\t; {enemy.Key}");
             }
+
             _writer.WriteCode(Code.Normal, "\n");
         }
 
@@ -152,14 +182,14 @@ ENEMY_STRUCT_SIZE    equ     4
                 var finalPath = firstTransformer.TransformPath(path.Value.Steps);
                 finalPath = secondTransformer.GroupPath(finalPath);
 
-                _paths.Add(path.Key, new PathInfo { Name = path.Key, Offset = offset, Index = index++ });
+                _paths.Add(path.Key, new PathInfo {Name = path.Key, Offset = offset, Index = index++});
                 _writer.WriteCode(Code.Normal, $"; path '{path.Key}', offset {offset}");
                 foreach (var step in finalPath)
                 {
-                    _writer.WriteCode(Code.Normal, $"\t\tdc.b\t\t{step.FrameCount},1,{step.VelocityX},{step.VelocityY}");
+                    _writer.WriteCode(Code.Normal,
+                        $"\t\tdc.b\t\t{step.FrameCount},1,{step.VelocityX},{step.VelocityY}");
                     offset += 4;
                 }
-
             }
 
             _writer.WriteCode(Code.Normal, "PathPtrs:");
@@ -167,7 +197,6 @@ ENEMY_STRUCT_SIZE    equ     4
             {
                 _writer.WriteCode(Code.Normal, $"\tdc.l\tPaths+{path.Offset}\t; {path.Name}");
             }
-
         }
 
         private void WritePathComments()
@@ -199,13 +228,14 @@ PATH_STRUCT_SIZE    equ     4
                 var path = GetPathFor(wave.Path, wavePair.Key);
                 var enemy = GetEnemyFor(wave.Enemy, wavePair.Key);
 
-                _writer.WriteCode(Code.Normal, $"\t\tdc.b\t\t{wave.Count}, 0, {enemy.Index * 4}, {path.Index*4}\t; Path: {path.Name}, Enemy: {enemy.Name}");
+                _writer.WriteCode(Code.Normal,
+                    $"\t\tdc.b\t\t{wave.Count}, 0, {enemy.Index * 4}, {path.Index * 4}\t; Path: {path.Name}, Enemy: {enemy.Name}");
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.Period}");
 
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.StartX},{wave.StartY}");
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.StartXOffset},{wave.StartYOffset}");
-
             }
+
             _writer.WriteCode(Code.Normal, "; final wave past the end of the universe");
             _writer.WriteCode(Code.Normal, "\t\tdc.w\t\t$7fff\t\t");
         }
@@ -277,8 +307,9 @@ WAVE_STRUCT_SIZE    equ     16
             _writer.WriteCode(Code.Normal, "**  ");
             _writer.WriteCode(Code.Normal, "**  Binary Blob data follows ");
             _writer.WriteCode(Code.Normal, "**  @ FrameByteOffset interleaved planes with the data");
-            _writer.WriteCode(Code.Normal, "**  @ MaskByteOffset interleaved planes with the data (same mask is repeated for each plane)");
-            _writer.WriteCode(Code.Normal,"");
+            _writer.WriteCode(Code.Normal,
+                "**  @ MaskByteOffset interleaved planes with the data (same mask is repeated for each plane)");
+            _writer.WriteCode(Code.Normal, "");
             _writer.WriteCode(Code.Normal, "BOBS_WIDTH\t\tequ\t0");
             _writer.WriteCode(Code.Normal, "BOBS_COUNT\t\tequ\t2");
             _writer.WriteCode(Code.Normal, "BOBS_STRUCT_SIZE\t\tequ\t4");

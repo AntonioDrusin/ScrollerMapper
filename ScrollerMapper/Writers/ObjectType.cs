@@ -9,5 +9,6 @@
         Tile,
         Assembly,
         Bob,
+        Sprite
     }
 }

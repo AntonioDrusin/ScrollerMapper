@@ -34,5 +34,10 @@ namespace ScrollerMapperTests.Services
         {
             return _array;
         }
+
+        public byte[] GetInterleaved(int planeCount)
+        {
+            return _array;
+        }
     }
 }

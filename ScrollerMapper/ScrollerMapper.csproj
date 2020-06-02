@@ -54,16 +54,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Aseprite.cs" />
     <Compile Include="BitmapExtensions.cs" />
     <Compile Include="BitplaneRenderers\BinaryBitplaneRenderer.cs" />
     <Compile Include="BitplaneRenderers\BinaryBobRenderer.cs" />
+    <Compile Include="BitplaneRenderers\SpriteRenderer.cs" />
     <Compile Include="ConversionException.cs" />
     <Compile Include="Converters\BobConverter.cs" />
     <Compile Include="Converters\ImageConverter.cs" />
     <Compile Include="Converters\Infos\BobInfo.cs" />
     <Compile Include="Converters\Infos\OutputPathStepInfo.cs" />
     <Compile Include="Converters\LevelConverter.cs" />
-    <Compile Include="Converters\SpritesConverter.cs" />
     <Compile Include="DefinitionModels\Level.cs" />
     <Compile Include="BitplaneRenderers\BinaryFontRenderer.cs" />
     <Compile Include="TileRenderers\BinaryTileRenderer.cs" />

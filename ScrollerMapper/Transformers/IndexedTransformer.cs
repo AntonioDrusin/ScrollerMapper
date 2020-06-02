@@ -21,6 +21,7 @@ namespace ScrollerMapper.Transformers
             _palette = palette;
             // We reserve color 0 for transparent
             _lut = palette.Entries.Skip(1).Select((c, i) => new {Color = c, Index = i})
+                .Where(_=>_.Color.A == 255) // Only get colors with no alpha
                 .ToDictionary(_ => Tuple.Create(_.Color.R, _.Color.G, _.Color.B), _ => (byte) (_.Index + 1));
         }
 
@@ -49,7 +50,7 @@ namespace ScrollerMapper.Transformers
             
             if (_missedColor)
             {
-                Console.WriteLine($"Some colors could no be accurately mapped for {_fileName}");
+                Console.WriteLine($"WARNING: Some colors could no be accurately mapped for {_fileName}");
             }
 
             return converted;
@@ -64,13 +65,14 @@ namespace ScrollerMapper.Transformers
             }
 
             var distance = double.MaxValue;
-            for (byte i = 0; i < _palette.Entries.Length; i++)
+            foreach (var tuple in _lut)
             {
-                var curDistance = GetDistance(color, _palette.Entries[i]);
-                if (!(curDistance < distance)) continue;
-
-                distance = curDistance;
-                index = i;
+                var curDistance = GetDistance(color, tuple.Key);
+                if (curDistance < distance)
+                {
+                    distance = curDistance;
+                    index = tuple.Value;
+                }
             }
 
             _missedColor = true;
@@ -78,11 +80,12 @@ namespace ScrollerMapper.Transformers
         }
 
 
-        private static double GetDistance(Color first, Color second)
+        private static double GetDistance(Color first, Tuple<byte, byte, byte> second)
         {
             // Purposefully ignore A as there should be none
-            return Math.Sqrt(Math.Pow(first.R - second.R, 2) + Math.Pow(first.G - second.G, 2) +
-                             Math.Pow(first.B - second.B, 2));
+            var (r, g, b) = second;
+            return Math.Sqrt(Math.Pow(first.R - r, 2) + Math.Pow(first.G - g, 2) +
+                             Math.Pow(first.B - b, 2));
         }
     }
 }

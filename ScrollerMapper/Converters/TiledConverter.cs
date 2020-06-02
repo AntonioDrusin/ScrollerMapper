@@ -39,7 +39,7 @@ namespace ScrollerMapper.Converters
                 throw new ConversionException("All tiles sets must have tiles of the same width.");
             }
 
-            var image = tileSet.ImageFileName.FromInputFolder().LoadBitmap();
+            var image = tileSet.ImageFileName.FromInputFolder().LoadIndexedBitmap();
             _paletteRenderer.Render(name, image.Palette, definition.PlaneCount.PowerOfTwo());
             _tileRenderer.Render(name, image, tileWidth, tileHeight, definition.PlaneCount);
 

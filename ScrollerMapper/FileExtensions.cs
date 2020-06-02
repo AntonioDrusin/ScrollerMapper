@@ -49,16 +49,19 @@ namespace ScrollerMapper
             PixelFormat.Format8bppIndexed
         };
 
-
-        public static Bitmap LoadBitmap(this string fileName, ColorPalette palette = null)
+        public static Bitmap LoadBitmap(this string fileName)
         {
             if (!File.Exists(fileName))
             {
-                throw new ConversionException($"Cannot file file {fileName} for bitmap.");
+                throw new ConversionException($"Cannot find file {fileName} for bitmap.");
             }
 
-            var bitmap = new Bitmap(fileName);
+            return new Bitmap(fileName);
+        }
 
+        public static Bitmap LoadIndexedBitmap(this string fileName, ColorPalette palette = null)
+        {
+            var bitmap = fileName.LoadBitmap();
             if (palette == null)
             {
                 if (!SupportedFormats.Contains(bitmap.PixelFormat))

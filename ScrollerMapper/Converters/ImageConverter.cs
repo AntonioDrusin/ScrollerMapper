@@ -19,7 +19,7 @@ namespace ScrollerMapper.Converters
         public void ConvertAll(string name, ImageDefinition definition)
         {
             var fileName = definition.ImageFile;
-            var image = fileName.FromInputFolder().LoadBitmap();
+            var image = fileName.FromInputFolder().LoadIndexedBitmap();
             _bitplaneRenderer.Render(name, image, definition.PlaneCount);
             _paletteRenderer.Render(name, image.Palette, definition.PlaneCount.PowerOfTwo());
         }
