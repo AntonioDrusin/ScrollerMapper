@@ -36,7 +36,7 @@ namespace ScrollerMapper.BitplaneRenderers
 
 
             _writer.WriteWord((ushort) aseprite.Frames.Count);
-            var offset = 2 + aseprite.Frames.Count * 6; // 4 words each frame for the "header"
+            var offset = 2 + aseprite.Frames.Count * 8; // 4 words each frame for the "header"
 
             var converted = new List<byte[]>();
             foreach (var frame in aseprite.Frames)
@@ -61,10 +61,9 @@ namespace ScrollerMapper.BitplaneRenderers
                 converted.Add(sprite.Sprite);
 
                 _writer.WriteWord((ushort) offset);
-                _writer.WriteByte(0);
-                _writer.WriteByte((byte) (frame.Duration / 20)); // 20ms frames = 1/50th of a second.
-                _writer.WriteByte((byte)sprite.OffsetX); 
-                _writer.WriteByte((byte)sprite.Height); 
+                _writer.WriteWord((ushort) (frame.Duration / 20)); // 20ms frames = 1/50th of a second.
+                _writer.WriteWord((ushort)sprite.OffsetX); 
+                _writer.WriteWord((ushort)sprite.Height);
 
                 offset += sprite.Sprite.Length + 8; // Add Control words and termination words as well, 
             }
@@ -86,21 +85,21 @@ namespace ScrollerMapper.BitplaneRenderers
             if (once) return;
             once = true;
 
-            _writer.WriteCode(Code.Normal, ";---- SPRITES STRUCTURES ----");
-            _writer.WriteCode(Code.Normal, ";----------------------------");
-            _writer.WriteCode(Code.Normal, "");
-            _writer.WriteCode(Code.Normal, $"SPRITES_CELLCOUNT_W\t\tequ\t0");
-            _writer.WriteCode(Code.Normal, $"SPRITES_STRUCT_SIZE\t\tequ\t2");
-            _writer.WriteCode(Code.Normal, "");
-            _writer.WriteCode(Code.Normal, $"SPRITE_OFFSET_W\t\tequ\t0");
-            _writer.WriteCode(Code.Normal, $"SPRITE_UNUSED_B\t\tequ\t2");
-            _writer.WriteCode(Code.Normal, $"SPRITE_PERIOD_B\t\tequ\t3\t\t; In 1/50th of a second");
-            _writer.WriteCode(Code.Normal, $"SPRITE_YOFFSET_B\tequ\t4");
-            _writer.WriteCode(Code.Normal, $"SPRITE_HEIGHT_W\t\tequ\t5");
-            _writer.WriteCode(Code.Normal, $"SPRITE_STRUCT_SIZE\tequ\t6");
-            _writer.WriteCode(Code.Normal, "");
-            _writer.WriteCode(Code.Normal, "");
+            _writer.WriteCode(Code.Normal, @"
+;---- SPRITES STRUCTURES ----
+    structure   SpriteStructure, 0
+    word        SpriteCellCount_w
+    label       SPRITE_STRUCT_SIZE
+; This is followed by SpriteCellCount_w CelStructure
 
+;---- CEL STRUCTURE ----
+    structure   CelStructure, 0
+    word        CelOffset_w         ; Offset from beginning of binary
+    word        CelPeriod_w
+    word        CelYOffset_w
+    word        CelHeight_w
+    label       CEL_STRUCT_SIZE ; This will be 8 so you can shift
+");
         }
 
         private static Bitmap MapSpriteColors(SpriteDefinition definition, AsepriteCelDefinition frame, Bitmap palette, Bitmap celBitmap)
