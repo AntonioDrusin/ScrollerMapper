@@ -34,6 +34,7 @@ namespace ScrollerMapper.ImageRenderers
 
             _writer.WriteCode(Code.Normal, $"{name}_BPL\t\tequ\t{planeCount}");
             _writer.WriteCode(Code.Normal, $"{name}_BWIDTH\t\tequ\t{byteWidth}");
+            _writer.WriteCode(Code.Normal, $"{name}_HEIGHT\t\tequ\t{height}");
 
             var planes = _transformer.GetBitplanes(planeCount);
             var interleaved = _transformer.GetInterleaved(planeCount);

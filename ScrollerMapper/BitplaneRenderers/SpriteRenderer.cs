@@ -147,11 +147,18 @@ namespace ScrollerMapper.BitplaneRenderers
             }
 
             var height = lastLine-firstLine+1;
-            return new TrimmedSprite {
-                OffsetX = firstLine,
-                Height = height,
-                Sprite = sprite.Skip(firstLine*4).Take(height*4).ToArray()
+            // return new TrimmedSprite {
+            //     OffsetX = firstLine,
+            //     Height = height,
+            //     Sprite = sprite.Skip(firstLine*4).Take(height*4).ToArray()
+            // };
+            return new TrimmedSprite
+            {
+                OffsetX = 0,
+                Height = sprite.Length/4,
+                Sprite = sprite
             };
+
         }
 
     }
