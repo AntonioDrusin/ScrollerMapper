@@ -17,7 +17,7 @@ namespace ScrollerMapper.PaletteRenderers
         // 0x0RGB
         public void Render(string name, ColorPalette palette, int maxValues)
         {
-
+            palette.ValidatePalette(name, maxValues);
             _writer.StartObject(ObjectType.Palette, name);
 
             if (maxValues != palette.Entries.Length)

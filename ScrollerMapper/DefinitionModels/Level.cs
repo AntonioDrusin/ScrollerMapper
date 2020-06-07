@@ -15,6 +15,8 @@ namespace ScrollerMapper.DefinitionModels
         public string BobPaletteFile { get; set; }
         public string SpritePaletteFile { get; set; }
         public PlayerDefinition Player { get; set; }
+        public int MaxActiveWaves { get; set; }
+        public int MaxActiveEnemies { get; set; }
     }
 
     internal class PlayerDefinition
@@ -66,7 +68,8 @@ namespace ScrollerMapper.DefinitionModels
     internal class WaveDefinition
     {
         public string Enemy { get; set; }
-        public int Location { get; set; }
+        public int OnExistingWaves { get; set; }
+        public int FrameDelay { get; set; }
         public int Count { get; set; } // Enemy Count
         public int Period { get; set; }
         public int StartX { get; set; }

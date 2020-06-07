@@ -218,26 +218,29 @@ PATH_STRUCT_SIZE    equ     4
         private void WriteWaves(LevelDefinition definition)
         {
             WriteWaveComments();
+            _writer.WriteCode(Code.Normal, $"MaxActiveWaves\t\tequ\t{definition.MaxActiveWaves}");
+            _writer.WriteCode(Code.Normal, $"MaxActiveEnemies\t\tequ\t{definition.MaxActiveEnemies}");
             _writer.WriteCode(Code.Normal, "Waves:");
-            foreach (var wavePair in definition.Waves.OrderBy(_ => _.Value.Location))
+            foreach (var wavePair in definition.Waves)
             {
                 var wave = wavePair.Value;
                 _writer.WriteCode(Code.Normal, $"; wave '{wavePair.Key}'");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.Location}");
+                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.FrameDelay}");
+                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
 
                 var path = GetPathFor(wave.Path, wavePair.Key);
                 var enemy = GetEnemyFor(wave.Enemy, wavePair.Key);
 
                 _writer.WriteCode(Code.Normal,
-                    $"\t\tdc.b\t\t{wave.Count}, 0, {enemy.Index * 4}, {path.Index * 4}\t; Path: {path.Name}, Enemy: {enemy.Name}");
+                    $"\t\tdc.b\t\t{wave.Count}, 0, {enemy.Index * 4}, {path.Index * 4}\t; Number of enemies: {wave.Count}, 0, Enemy: {enemy.Name}, Path: {path.Name} ");
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.Period}");
 
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.StartX},{wave.StartY}");
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.StartXOffset},{wave.StartYOffset}");
             }
 
-            _writer.WriteCode(Code.Normal, "; final wave past the end of the universe");
-            _writer.WriteCode(Code.Normal, "\t\tdc.w\t\t$7fff\t\t");
+            _writer.WriteCode(Code.Normal, "; final wave has a special WaveDelay of $ffff to mark the end");
+            _writer.WriteCode(Code.Normal, "\t\tdc.w\t\t$ffff\t\t");
         }
 
         private PathInfo GetPathFor(string pathName, string sourceName)
@@ -275,20 +278,19 @@ PATH_STRUCT_SIZE    equ     4
             _writer.WriteCode(Code.Normal, @"
 ** Structure for wave
 ** WaveEnemyOffset_b is an offset off of the Enemies label to point to the enemy
-
-WaveLocation_w      equ     0       ; In the X axis of the whole level
-WaveEnemyCount_b    equ     2       
-WaveUnused_b        equ     3
-WaveEnemyOffset_b   equ     4       ; Offset in the Enemies label
-WavePathOffset_b    equ     5       ; Offset in the PathPtrs label
-WavePeriod_w        equ     6
-WaveStartX_w        equ     8
-WaveStartY_w        equ     10
-WaveStartXOffset_w  equ     12
-WaveStartYOffset_w  equ     14
-WAVE_STRUCT_SIZE    equ     16
-
-
+    structure   WaveStructure, 0
+    word        WaveDelay_w         ; Frame delay before wave is considered for spawn
+    word        WaveOnCount_w       ; no more than OnCount waves remaining before start
+    byte        WaveEnemyCount_b
+    byte        WaveUnused_b    
+    byte        WaveEnemyOffset_b   ; Offset in the Enemies label
+    byte        WavePathOffset_b    ; Offset in the PathPtrs label
+    word        WavePeriod_w        ; Frames between enemy spawn
+    word        WaveSpawnX_w        ; spawn location X
+    word        WaveSpawnY_w        ; spawn location Y
+    word        WaveSpawnXOffset_w   
+    word        WaveSpawnYOffset_w  
+    label       WAVE_STRUCT_SIZE
 ");
         }
 

@@ -6,6 +6,26 @@ using System.Linq;
 
 namespace ScrollerMapper.Transformers
 {
+    internal class ColorIndex
+    {
+        public Color Color;
+        public int Index;
+    }
+
+    internal class ColorIndexComparer : IEqualityComparer<ColorIndex>
+    {
+        public bool Equals(ColorIndex x, ColorIndex y)
+        {
+            return x.Color.Equals(y.Color);
+        }
+
+        public int GetHashCode(ColorIndex obj)
+        {
+            return obj.Color.GetHashCode();
+        }
+    }
+
+
     internal class IndexedTransformer
     {
         private readonly string _fileName;
@@ -20,8 +40,9 @@ namespace ScrollerMapper.Transformers
             _bitmap = bitmap;
             _palette = palette;
             // We reserve color 0 for transparent
-            _lut = palette.Entries.Skip(1).Select((c, i) => new {Color = c, Index = i})
-                .Where(_=>_.Color.A == 255) // Only get colors with no alpha
+            _lut = palette.Entries.Skip(1).Select((c, i) => new ColorIndex {Color = c, Index = i})
+                .Where(_ => _.Color.A == 255) // Only get colors with no alpha
+                .Distinct(new ColorIndexComparer())
                 .ToDictionary(_ => Tuple.Create(_.Color.R, _.Color.G, _.Color.B), _ => (byte) (_.Index + 1));
         }
 
@@ -42,12 +63,12 @@ namespace ScrollerMapper.Transformers
                 for (int y = 0; y < height; y++)
                 {
                     var color = _bitmap.GetPixel(x, y);
-                    result[width * y + x] = color.A < 255 ? (byte)0 : GetClosestColorIndex(color);
+                    result[width * y + x] = color.A < 255 ? (byte) 0 : GetClosestColorIndex(color);
                 }
             }
 
             converted.SetImageBytes(result);
-            
+
             if (_missedColor)
             {
                 Console.WriteLine($"WARNING: Some colors could no be accurately mapped for {_fileName}");
