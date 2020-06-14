@@ -37,10 +37,10 @@ namespace ScrollerMapper.Transformers
                         yield return new OutputPathStepInfo
                         {
                             FrameCount = 1,
-                            VelocityX = DoubleToByte(
+                            VelocityX = DoubleToShort(
                                 ((currentStep.X * curMix + previousStep.X * inMix + nextStep.X * outMix) /
                                  (inMix + outMix + curMix))),
-                            VelocityY = DoubleToByte(
+                            VelocityY = DoubleToShort(
                                 ((currentStep.Y * curMix + previousStep.Y * inMix + nextStep.Y * outMix) /
                                  (inMix + outMix + curMix)))
                         };
@@ -52,9 +52,9 @@ namespace ScrollerMapper.Transformers
             }
         }
 
-        private byte DoubleToByte(double value)
+        private short DoubleToShort(double value)
         {
-            return (byte) (0xff & ((short) value));
+            return (short)value;
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Local
@@ -77,8 +77,8 @@ namespace ScrollerMapper.Transformers
     {
         public IEnumerable<OutputPathStepInfo> GroupPath(IEnumerable<OutputPathStepInfo> steps)
         {
-            byte curVx = 0;
-            byte curVy = 0;
+            short curVx = 0;
+            short curVy = 0;
             long curFrame = 0;
 
             foreach (var step in steps.Concat(new[]

@@ -53,60 +53,64 @@ namespace ScrollerMapperTests
                 0x00, 0x02, // WORD Number of bobs                  //2
                 
                 // First bob metadata
-                0x00, 20,                                         // 4  Bob offset
-                0x00, 32, // Mask offset
+                0x00,0x00,0x00, 36,                                         // 4  Bob offset
+                0x00,0x00,0x00, 48, // Mask offset
                 0x00, 02, // Line count
                 0x0, 0x1, // Y adjustment
+                0x00,0x00,   // modulo
+                0x01,0x82,  // bltsize
 
                 // Second bob metadata
-                0x00, 44,                                         //12
-                0x00, 62,
+                0x00,0x00,0x00, 60,                                         // 20
+                0x00,0x00,0x00, 78,
                 0x00, 03,
                 0x00, 0x00,
+                0x00, 0x00,  // modulo
+                0x02, 0x42,  // blt size
 
                 // First bob, interleaved.
                 // Padded to word size // Zero lines removed
 
-                0xaa, 0x00,                                         //20
+                0xaa, 0x00,                                         //36
                 0x20, 0x00,
                 0x01, 0x00,
 
-                0x03, 0x00,                                         //26
+                0x03, 0x00,                                         //42
                 0x10, 0x00,
                 0x01, 0x00,
 
                 // First bob cookie
-                0xab, 0x00,                                         //32
+                0xab, 0x00,                                         //48
                 0xab, 0x00,
                 0xab, 0x00,
 
-                0x13, 0x00,                                         //38
+                0x13, 0x00,                                         //54
                 0x13, 0x00,
                 0x13, 0x00,
 
                 // Second bob interleaved
-                0xf0,  0x00,                                         //44
+                0xf0,  0x00,                                         //60
                 0x20,  0x00,
                 0x01,  0x00,
 
-                0x01, 0x00,                                         //50
+                0x01, 0x00,                                         //66
                 0x40, 0x00,
                 0x01, 0x00,
 
-                0x30, 0x00,                                         //56
+                0x30, 0x00,                                         //72
                 0x20, 0x00,
                 0x01, 0x00,
 
                 // Second bob cookie
-                0xf1, 0x00,                                         //62
+                0xf1, 0x00,                                         //78
                 0xf1, 0x00,
                 0xf1, 0x00,
 
-                0x41, 0x00,                                         //68
+                0x41, 0x00,                                         //84
                 0x41, 0x00,
                 0x41, 0x00,
 
-                0x31, 0x00,                                         //74
+                0x31, 0x00,                                         //90
                 0x31, 0x00,
                 0x31, 0x00
 

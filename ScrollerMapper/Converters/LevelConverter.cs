@@ -95,6 +95,7 @@ namespace ScrollerMapper.Converters
             }
 
             _writer.WriteCode(Code.Normal, "\tsection\tdata");
+            _writer.WriteCode(Code.Normal, $"\nBOB_COUNT\t\tequ\t{definition.Bobs.Count}");
             _writer.WriteCode(Code.Normal, "\n\n** Pointers to all loaded Bobs\n");
             _writer.WriteCode(Code.Normal, "BobPtrs:");
             foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
@@ -138,17 +139,11 @@ namespace ScrollerMapper.Converters
                     throw new ConversionException($"Bob '{enemy.Bob}' for enemy '{enemyKeyValue.Key}' was not found.");
                 }
 
-                _writer.WriteCode(Code.Normal,
-                    $"\tdc.b\t{bobForEnemy.Index * 4},{enemy.FrameDelay}\t\t; Enemy {enemyKeyValue.Key} offset {offset} bob {enemy.Bob}");
-                _writer.WriteCode(Code.Normal, $"\tdc.w\t{enemy.Points}");
-                offset += 4;
-                _enemies.Add(enemyKeyValue.Key, new EnemyInfo {Name = enemyKeyValue.Key, Index = index++});
-            }
-
-            _writer.WriteCode(Code.Normal, "\n\nEnemyPtr:");
-            foreach (var enemy in _enemies)
-            {
-                _writer.WriteCode(Code.Normal, $"\t\tdc.l\tEnemies+{enemy.Value.Index * 4}\t; {enemy.Key}");
+                _writer.WriteCode(Code.Normal, $"\tdc.l\t{bobForEnemy.Name}Bob");
+                _writer.WriteCode(Code.Normal, $"\tdc.w\t{enemy.FrameDelay}\t\t;Cel period");
+                _writer.WriteCode(Code.Normal, $"\tdc.w\t{enemy.Points}\t\t;Points");
+                _enemies.Add(enemyKeyValue.Key, new EnemyInfo { Name = enemyKeyValue.Key, Index = index++, Offset = offset });
+                offset += 8;
             }
 
             _writer.WriteCode(Code.Normal, "\n");
@@ -159,12 +154,12 @@ namespace ScrollerMapper.Converters
             _writer.WriteCode(Code.Normal, @"
 ** Structure for Enemies
 ** EnemyBobOffset is an offset in bytes from the Enemies label
-
-EnemyBobPtrOffset_b  equ     0   
-EnemyPeriod_b        equ     1  ; Period in frames between switching bobs
-EnemyPoints_w        equ     2
-ENEMY_STRUCT_SIZE    equ     4
-            ");
+    structure   EnemyStructure, 0
+    long        EnemyBobPtr_l
+    word        EnemyPeriod_w       ; Period in frames between switching bobs
+    word        EnemyPoints_w
+    label       ENEMY_STRUCT_SIZE
+");
         }
 
         private void WritePaths(Dictionary<string, PathDefinition> definitionPaths)
@@ -187,16 +182,14 @@ ENEMY_STRUCT_SIZE    equ     4
                 foreach (var step in finalPath)
                 {
                     _writer.WriteCode(Code.Normal,
-                        $"\t\tdc.b\t\t{step.FrameCount},1,{step.VelocityX},{step.VelocityY}");
-                    offset += 4;
+                        $"\t\tdc.w\t\t{step.FrameCount},{step.VelocityX},{step.VelocityY}");
+                    offset += 6;
                 }
+                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t0, 0, 0");
+                offset += 6;
+
             }
 
-            _writer.WriteCode(Code.Normal, "PathPtrs:");
-            foreach (var path in _paths.Values.OrderBy(_ => _.Index))
-            {
-                _writer.WriteCode(Code.Normal, $"\tdc.l\tPaths+{path.Offset}\t; {path.Name}");
-            }
         }
 
         private void WritePathComments()
@@ -206,12 +199,12 @@ ENEMY_STRUCT_SIZE    equ     4
 ** The structure is repeated until the FrameCount is 0. That is the end of the path. Enemy will disappear.
 ** Each path is formed by a number of these structure until framecount is 0.
 
-PathFrameCount_b    equ     0   
-PathMode_b          equ     1   ; 1 = Use velocity.
-PathVX_b            equ     2   ; Velocity in 1//16th of pixel
-PathVY_b            equ     3   
-PATH_STRUCT_SIZE    equ     4
-           
+    structure       PathStructure, 0
+    word            PathFrameCount_w
+    word            PathVX_w
+    word            PathVY_w
+    label           PATH_STRUCT_SIZE
+
 ");
         }
 
@@ -224,15 +217,15 @@ PATH_STRUCT_SIZE    equ     4
             foreach (var wavePair in definition.Waves)
             {
                 var wave = wavePair.Value;
-                _writer.WriteCode(Code.Normal, $"; wave '{wavePair.Key}'");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.FrameDelay}");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
-
                 var path = GetPathFor(wave.Path, wavePair.Key);
                 var enemy = GetEnemyFor(wave.Enemy, wavePair.Key);
 
-                _writer.WriteCode(Code.Normal,
-                    $"\t\tdc.b\t\t{wave.Count}, 0, {enemy.Index * 4}, {path.Index * 4}\t; Number of enemies: {wave.Count}, 0, Enemy: {enemy.Name}, Path: {path.Name} ");
+                _writer.WriteCode(Code.Normal, $"; wave '{wavePair.Key}'");
+                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.FrameDelay}");
+                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
+                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.Count}");
+                _writer.WriteCode(Code.Normal, $"\t\tdc.l\t\tEnemies+{enemy.Offset}");
+                _writer.WriteCode(Code.Normal, $"\t\tdc.l\t\tPaths+{path.Offset}");
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.Period}");
 
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.StartX},{wave.StartY}");
@@ -281,10 +274,9 @@ PATH_STRUCT_SIZE    equ     4
     structure   WaveStructure, 0
     word        WaveDelay_w         ; Frame delay before wave is considered for spawn
     word        WaveOnCount_w       ; no more than OnCount waves remaining before start
-    byte        WaveEnemyCount_b
-    byte        WaveUnused_b    
-    byte        WaveEnemyOffset_b   ; Offset in the Enemies label
-    byte        WavePathOffset_b    ; Offset in the PathPtrs label
+    word        WaveEnemyCount_w    
+    long        WaveEnemyPtr_l      
+    long        WavePathPtr_l           
     word        WavePeriod_w        ; Frames between enemy spawn
     word        WaveSpawnX_w        ; spawn location X
     word        WaveSpawnY_w        ; spawn location Y
@@ -311,16 +303,22 @@ PATH_STRUCT_SIZE    equ     4
             _writer.WriteCode(Code.Normal, "**  @ FrameByteOffset interleaved planes with the data");
             _writer.WriteCode(Code.Normal,
                 "**  @ MaskByteOffset interleaved planes with the data (same mask is repeated for each plane)");
-            _writer.WriteCode(Code.Normal, "");
-            _writer.WriteCode(Code.Normal, "BOBS_WIDTH\t\tequ\t0");
-            _writer.WriteCode(Code.Normal, "BOBS_COUNT\t\tequ\t2");
-            _writer.WriteCode(Code.Normal, "BOBS_STRUCT_SIZE\t\tequ\t4");
-            _writer.WriteCode(Code.Normal, "BOB_PLANEOFFSET\t\tequ\t0");
-            _writer.WriteCode(Code.Normal, "BOB_MASKOFFSET\t\tequ\t2");
-            _writer.WriteCode(Code.Normal, "BOB_HEIGHT\t\tequ\t4");
-            _writer.WriteCode(Code.Normal, "BOB_YADJUST\t\tequ\t6");
-            _writer.WriteCode(Code.Normal, "BOB_STRUCT_SIZE\t\tequ\t8");
+            _writer.WriteCode(Code.Normal, @"
+    structure   BobsStructure, 0
+    word        BobsWordWidth_w
+    word        BobsCount_w 
+    label       BOBS_STRUCT_SIZE
 
+    structure   BCelStructure, 0 
+    long        BCelPlaneOffset_l        ; Long, so upon load you can turn it into a pointer
+    long        BCelMaskOffset_l         ; Long, so upon load you can turn this into a pointer
+    word        BCelHeight_w
+    word        BCelYAdjust_w
+    word        BCelDModulo_w            ; Destination modulo for bob (set to 0, you need to initialize this)
+    word        BCelBlitSize_w           ; This is pre-calculated    
+    label       BCEL_STRUCT_SIZE
+
+");
             _writer.WriteCode(Code.Normal, "");
         }
 
