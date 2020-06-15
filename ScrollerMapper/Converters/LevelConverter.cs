@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Text;
 using ScrollerMapper.BitplaneRenderers;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
@@ -11,6 +13,9 @@ namespace ScrollerMapper.Converters
 {
     internal class LevelConverter
     {
+        const int BytesPerRow = 40;
+        const int ScreenHeight = 256;
+
         private readonly Options _options;
         private readonly TiledConverter _tiledConverter;
         private readonly ImageConverter _imageConverter;
@@ -21,6 +26,7 @@ namespace ScrollerMapper.Converters
         private Dictionary<string, BobInfo> _bobs;
         private Dictionary<string, PathInfo> _paths;
         private Dictionary<string, EnemyInfo> _enemies;
+        private int _scoreboardHeight;
 
         public LevelConverter(
             Options options,
@@ -50,7 +56,6 @@ namespace ScrollerMapper.Converters
 
             if (definition.SpritePaletteFile != null)
             {
-
                 var paletteBitmap = definition.SpritePaletteFile.FromInputFolder().LoadIndexedBitmap();
 
                 _paletteRenderer.Render("sprite", paletteBitmap.Palette, 16);
@@ -71,13 +76,15 @@ namespace ScrollerMapper.Converters
                 _imageConverter.ConvertAll(imageDefinition.Key, imageDefinition.Value);
             }
 
-            if (definition.Score != null)
+            if (definition.Panel != null)
             {
-                _imageConverter.ConvertAll("ScoreFont", definition.Score.Font);
+                _imageConverter.ConvertAll("ScoreFont", definition.Panel.Font);
                 _writer.WriteCode(Code.Normal, $"; Score location");
-                _writer.WriteCode(Code.Normal, $"SCORE_X\t\tequ\t{definition.Score.X}");
-                _writer.WriteCode(Code.Normal, $"SCORE_Y\t\tequ\t{definition.Score.Y}");
-                _imageConverter.ConvertAll("Scoreboard", definition.Score.Scoreboard);
+                _writer.WriteCode(Code.Normal, $"SCORE_X\t\tequ\t{definition.Panel.X}");
+                _writer.WriteCode(Code.Normal, $"SCORE_Y\t\tequ\t{definition.Panel.Y}");
+
+                var scoreboardInfo = _imageConverter.ConvertAll("Scoreboard", definition.Panel.Scoreboard);
+                _scoreboardHeight = scoreboardInfo.Height;
             }
 
             // Move all of this in its own?
@@ -104,7 +111,9 @@ namespace ScrollerMapper.Converters
             }
 
             _writer.WriteCode(Code.Normal, "\n\n");
+            _writer.WriteCode(Code.Normal, $"LEVEL_WIDTH\t\tequ\t\t{definition.Level.Width}");
 
+            WriteMapLookup(definition);
             WriteEnemies(definition);
             WritePaths(definition.Paths);
             WriteWaves(definition);
@@ -142,7 +151,8 @@ namespace ScrollerMapper.Converters
                 _writer.WriteCode(Code.Normal, $"\tdc.l\t{bobForEnemy.Name}Bob");
                 _writer.WriteCode(Code.Normal, $"\tdc.w\t{enemy.FrameDelay}\t\t;Cel period");
                 _writer.WriteCode(Code.Normal, $"\tdc.w\t{enemy.Points}\t\t;Points");
-                _enemies.Add(enemyKeyValue.Key, new EnemyInfo { Name = enemyKeyValue.Key, Index = index++, Offset = offset });
+                _enemies.Add(enemyKeyValue.Key,
+                    new EnemyInfo {Name = enemyKeyValue.Key, Index = index++, Offset = offset});
                 offset += 8;
             }
 
@@ -185,11 +195,10 @@ namespace ScrollerMapper.Converters
                         $"\t\tdc.w\t\t{step.FrameCount},{step.VelocityX},{step.VelocityY}");
                     offset += 6;
                 }
+
                 _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t0, 0, 0");
                 offset += 6;
-
             }
-
         }
 
         private void WritePathComments()
@@ -325,6 +334,42 @@ namespace ScrollerMapper.Converters
         private void ConvertBobPalette(ColorPalette palette, LevelDefinition definition)
         {
             _paletteRenderer.Render("bob", palette, definition.BobPlaneCount.PowerOfTwo());
+        }
+
+        private void WriteMapLookup(LevelDefinition definition)
+        {
+            var xShift = Math.Log(definition.Level.Width / 256.0, 2);
+            _writer.WriteCode(Code.Normal,
+                $"MAP_XSHIFT\t\tequ\t\t{xShift}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
+
+            _writer.WriteCode(Code.Normal,
+                "\n\nMapXLookup: ; given X>>MAP_XSHIFT returns x coordinate for the point in the map");
+            var lookup = new StringBuilder();
+            for (int x = 0; x < 256; x++)
+            {
+                int mapX = x * definition.Panel.Map.Width / 255 + definition.Panel.Map.X;
+                lookup.Append(x % 32 == 0 ? "\n\tdc.w\t" : ",");
+                lookup.Append($"{mapX}");
+            }
+
+            var levelHeight = ScreenHeight - _scoreboardHeight;
+            var mapHeight = definition.Panel.Map.Height;
+            lookup.Append(
+                "\n\nMapYLookup: ; given the Y returns the offset form the beginning of the score bitmap");
+            for (int y = 0; y < 256; y++)
+            {
+
+                var mappedY = (y + definition.Panel.Map.Y) * mapHeight / levelHeight;
+
+                var offset =
+                    mappedY * BytesPerRow * definition.Panel.Scoreboard.PlaneCount
+                    + (definition.Panel.Map.X >> 3);
+                lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
+                lookup.Append($"{offset}");
+            }
+
+
+            _writer.WriteCode(Code.Normal, lookup.ToString());
         }
     }
 }

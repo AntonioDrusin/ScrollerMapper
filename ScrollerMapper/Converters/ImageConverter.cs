@@ -1,5 +1,4 @@
-﻿using System.IO;
-using ScrollerMapper.DefinitionModels;
+﻿using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.ImageRenderers;
 using ScrollerMapper.PaletteRenderers;
 
@@ -16,12 +15,20 @@ namespace ScrollerMapper.Converters
             _bitplaneRenderer = bitplaneRenderer;
         }
 
-        public void ConvertAll(string name, ImageDefinition definition)
+        public ImageInfo ConvertAll(string name, ImageDefinition definition)
         {
             var fileName = definition.ImageFile;
             var image = fileName.FromInputFolder().LoadIndexedBitmap();
             _bitplaneRenderer.Render(name, image, definition.PlaneCount);
             _paletteRenderer.Render(name, image.Palette, definition.PlaneCount.PowerOfTwo());
+            return new ImageInfo { 
+                Height = image.Height,
+            };
         }
+    }
+
+    internal class ImageInfo
+    {
+        public int Height;
     }
 }

@@ -10,13 +10,19 @@ namespace ScrollerMapper.DefinitionModels
         public Dictionary<string, EnemyDefinition> Enemies { get; set; }
         public Dictionary<string, WaveDefinition> Waves { get; set; }
         public Dictionary<string, PathDefinition> Paths { get; set; }
-        public ScoreDefinition Score { get; set; }
+        public PanelDefinition Panel { get; set; }
         public int BobPlaneCount { get; set; }
         public string BobPaletteFile { get; set; }
         public string SpritePaletteFile { get; set; }
         public PlayerDefinition Player { get; set; }
         public int MaxActiveWaves { get; set; }
         public int MaxActiveEnemies { get; set; }
+        public LevelDetailsDefinition Level { get; set; }
+    }
+
+    internal class LevelDetailsDefinition
+    {
+        public int Width { get; set; }
     }
 
     internal class PlayerDefinition
@@ -31,12 +37,21 @@ namespace ScrollerMapper.DefinitionModels
         public string SpriteNumber { get; set; }
     }
 
-    internal class ScoreDefinition
+    internal class PanelDefinition
     {
         public ImageDefinition Font { get; set; }
         public ImageDefinition Scoreboard { get; set; }
+        public MapDefinition Map { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
+    }
+
+    internal class MapDefinition
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
     }
 
     internal class TiledTileDefinition
