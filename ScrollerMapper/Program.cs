@@ -57,7 +57,9 @@ namespace ScrollerMapper
             }
             catch (ConversionException ex)
             {
+                Console.WriteLine("ERROR converting " + o.InputFile + ":");
                 Console.WriteLine(ex.Message);
+                Console.WriteLine("Level has been partially generated");
             }
         }
     }

@@ -18,6 +18,34 @@ namespace ScrollerMapper.DefinitionModels
         public int MaxActiveWaves { get; set; }
         public int MaxActiveEnemies { get; set; }
         public LevelDetailsDefinition Level { get; set; }
+
+        public void Validate()
+        {
+            if (Bobs == null)
+            {
+                throw new ConversionException("'bobs' must be defined.");
+            }
+            if (Level== null)
+            {
+                throw new ConversionException("'level' must be defined.");
+            }
+            if (Player == null)
+            {
+                throw new ConversionException("'player' must be defined.");
+            }
+            if (Waves == null)
+            {
+                throw new ConversionException("'waves' must be defined.");
+            }
+            if (Paths == null)
+            {
+                throw new ConversionException("'paths' must be defined.");
+            }
+            if (Enemies == null)
+            {
+                throw new ConversionException("'enemies' must be defined.");
+            }
+        }
     }
 
     internal class LevelDetailsDefinition

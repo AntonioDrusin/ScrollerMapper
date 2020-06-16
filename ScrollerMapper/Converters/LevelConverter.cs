@@ -49,6 +49,7 @@ namespace ScrollerMapper.Converters
         public void ConvertAll()
         {
             var definition = _options.InputFile.ReadJsonFile<LevelDefinition>();
+            definition.Validate();
             if (definition.Tiles != null)
             {
                 ConvertTiles(definition);
@@ -362,8 +363,7 @@ namespace ScrollerMapper.Converters
                 var mappedY = (y + definition.Panel.Map.Y) * mapHeight / levelHeight;
 
                 var offset =
-                    mappedY * BytesPerRow * definition.Panel.Scoreboard.PlaneCount
-                    + (definition.Panel.Map.X >> 3);
+                    mappedY * BytesPerRow * definition.Panel.Scoreboard.PlaneCount;
                 lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
                 lookup.Append($"{offset}");
             }
