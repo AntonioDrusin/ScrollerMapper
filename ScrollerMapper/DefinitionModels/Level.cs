@@ -56,6 +56,15 @@ namespace ScrollerMapper.DefinitionModels
     internal class PlayerDefinition
     {
         public SpriteDefinition MainSprite { get; set; }
+        public ShotsDefinition Shots { get; set; }
+    }
+
+    internal class ShotsDefinition
+    {
+        public int Vx { get; set; }
+        public int MaxCount { get; set; }
+        public int Cooldown { get; set; }
+        public BobDefinition Bob { get; set; }
     }
 
     internal class SpriteDefinition
@@ -97,8 +106,11 @@ namespace ScrollerMapper.DefinitionModels
     internal class BobDefinition
     {
         public string ImageFile { get; set; }
-        public int FrameDelay { get; set; }
         public int Width { get; set; }
+        public int? Height { get; set; }
+        public int? StartX { get; set; }
+        public int? StartY { get; set; }
+        public int? Count { get; set; }
     }
 
     internal class EnemyDefinition

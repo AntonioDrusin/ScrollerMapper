@@ -16,7 +16,7 @@ namespace ScrollerMapper.Converters
         public void ConvertAll(string name, BobDefinition definition, int planes, ColorPalette palette)
         {
             var image = definition.ImageFile.FromInputFolder().LoadIndexedBitmap(palette);
-            _bobRenderer.Render(name, image, definition.Width, planes);
+            _bobRenderer.Render(name, image, definition, planes);
         }
     }
 }

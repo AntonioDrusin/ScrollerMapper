@@ -1,21 +1,23 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper.BitplaneRenderers
 {
     internal interface IBobRenderer
     {
-        void Render(string name, Bitmap bitmap, int bobWidth, int planeCount);
+        void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount);
     }
 
     internal class BinaryBobRenderer : IBobRenderer
     {
         private readonly IBitmapTransformer _transformer;
         private readonly IWriter _writer;
-        private int _bobWordWidth;
         private int _planeCount;
+        private BobDefinition _definition;
+        private int _bobWordWidth;
 
         public BinaryBobRenderer(IWriter writer, IBitmapTransformer transformer)
         {
@@ -23,71 +25,92 @@ namespace ScrollerMapper.BitplaneRenderers
             _transformer = transformer;
         }
 
-        public void Render(string name, Bitmap bitmap, int bobWidth, int planeCount)
+        public void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount)
         {
-            if (bobWidth % 8 != 0)
+            _definition = definition;
+            _planeCount = planeCount;
+            _bobWordWidth = (_definition.Width / 8 + 1) / 2;
+
+            var width = definition.Width;
+            if (width % 8 != 0)
             {
                 throw new ConversionException("Bob width must be a multiple of 8.");
             }
-
-            _transformer.SetBitmap(bitmap);
-
+            
             _writer.StartObject(ObjectType.Bob, name);
 
-            var planes = _transformer.GetBitplanes(planeCount);
-            _planeCount = planeCount;
-            SaveBobsWithMasks(planes, _transformer.GetByteWidth(), _transformer.GetHeight(), bobWidth / 8, 0);
+            SaveBobsWithMasks(bitmap, 0);
 
             _writer.EndObject();
         }
 
 
-        private void SaveBobsWithMasks(byte[] planes, int byteWidth, int height, int tileByteWidth, int initialOffset)
+        private void SaveBobsWithMasks(Bitmap bitmap, int initialOffset)
         {
-            var numTiles = byteWidth / tileByteWidth;
-            _bobWordWidth = (tileByteWidth + 1) / 2;
+            var width = _definition.Width;
+            var height = _definition.Height.GetValueOrDefault(bitmap.Height);
+            var numTiles = _definition.Count.GetValueOrDefault(bitmap.Width / _definition.Width);
+            var bobX = _definition.StartX.GetValueOrDefault(0);
+            var bobY = _definition.StartY.GetValueOrDefault(0);
+            var maxXBobs = bitmap.Width / _definition.Width;
+            var maxYBobs = bitmap.Height / _definition.Height;
+            
             var info = new BobData[numTiles];
 
-
-            _writer.WriteWord((ushort) _bobWordWidth);
+            _writer.WriteWord((ushort)(_bobWordWidth));
             initialOffset += 2;
-            _writer.WriteWord((ushort) numTiles);
+            _writer.WriteWord((ushort)numTiles);
             initialOffset += 2;
 
-            for (int t = 0; t < numTiles; t++)
+            for (var i = 0; i < numTiles;)
             {
                 var currentBob = new BobData();
-                info[t] = currentBob;
+                info[i] = currentBob;
+                
+                var bobBitmap = bitmap.Clone(new Rectangle(bobX * width, bobY * height, width, height), bitmap.PixelFormat);
+                _transformer.SetBitmap(bobBitmap);
+                var planes = _transformer.GetInterleaved(_planeCount); // This will bump up to word size...
 
-                for (int y = 0; y < height; y++)
+                if (planes.Any(_ => _ != 0))
                 {
-                    byte[] rowData = new byte[_bobWordWidth * 2 * _planeCount];
-                    byte[] rowMask = new byte[_bobWordWidth * 2 * _planeCount];
 
-                    for (int xb = 0; xb < tileByteWidth; xb++)
+                    for (var y = 0; y < height; y++)
                     {
-                        byte mask = 0;
-
-                        for (int bpl = 0; bpl < _planeCount; bpl++)
+                        var rowData = new byte[_bobWordWidth * 2 * _planeCount];
+                        var rowMask = new byte[_bobWordWidth * 2 * _planeCount];
+                        for (var x = 0; x < width / 8; x++)
                         {
-                            var value = planes[
-                                t * tileByteWidth + xb + y * byteWidth + bpl * byteWidth * height
-                            ];
-                            mask |= value;
-                            rowData[xb + bpl * (_bobWordWidth * 2)] = value;
+                            byte mask = 0;
+                            for (var bpl = 0; bpl < _planeCount; bpl++)
+                            {
+                                var value = planes[y * _planeCount * _bobWordWidth * 2 + bpl * _bobWordWidth * 2 + x];
+                                rowData[bpl * _bobWordWidth * 2 + x] = value;
+                                mask |= value;
+                            }
+
+                            for (var bpl = 0; bpl < _planeCount; bpl++)
+                            {
+                                rowMask[bpl * _bobWordWidth * 2 + x] = mask;
+                            }
                         }
 
-                        for (var mPlane = 0; mPlane < _planeCount; mPlane++)
-                        {
-                            rowMask[xb + (mPlane) * (_bobWordWidth * 2)] = mask;
-                        }
+                        currentBob.PlaneRows.Add(rowData);
+                        currentBob.MaskRows.Add(rowMask);
                     }
 
-                    currentBob.PlaneRows.Add(rowData);
-                    currentBob.MaskRows.Add(rowMask);
+                    i++;
                 }
-            }
 
+                bobX++;
+                if (bobX >= maxXBobs)
+                {
+                    bobY++;
+                    if (bobY >= maxYBobs) throw new ConversionException($"Converting {_definition.ImageFile} reached the end of the image trying to get {numTiles} tiles.");
+                    bobX = 0;
+                }
+
+            }
+            
             // All Bob info added to the initial offset
             initialOffset += numTiles * 16; // 8 bytes per tile of information in the header
 

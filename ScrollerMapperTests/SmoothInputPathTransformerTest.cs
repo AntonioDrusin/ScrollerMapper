@@ -47,9 +47,9 @@ namespace ScrollerMapperTests
 
             var expected = new OutputPathStepInfo[]
             {
-                new OutputPathStepInfo { FrameCount = 1, VelocityX = 1, VelocityY = 255 },
-                new OutputPathStepInfo { FrameCount = 1, VelocityX = 3, VelocityY = 253 },
-                new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 252 },        // Correct speed
+                new OutputPathStepInfo { FrameCount = 1, VelocityX = 1, VelocityY = -1 },
+                new OutputPathStepInfo { FrameCount = 1, VelocityX = 3, VelocityY = -3 },
+                new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = -4 },        // Correct speed
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 7, VelocityY = 1 },
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 13, VelocityY = 11 },
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 16, VelocityY = 16 },

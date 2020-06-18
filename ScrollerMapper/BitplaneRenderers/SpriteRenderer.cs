@@ -51,7 +51,7 @@ namespace ScrollerMapper.BitplaneRenderers
 
                 if (string.Compare(definition.SpriteNumber, "attached", StringComparison.CurrentCultureIgnoreCase) != 0)
                 {
-                    celBitmap = MapSpriteColors(definition, frame, palette, celBitmap);
+                    celBitmap = MapColors(definition, palette, celBitmap);
                 }
 
                 _transformer.SetBitmap(celBitmap);
@@ -102,9 +102,9 @@ namespace ScrollerMapper.BitplaneRenderers
 ");
         }
 
-        private static Bitmap MapSpriteColors(SpriteDefinition definition, AsepriteCelDefinition frame, Bitmap palette, Bitmap celBitmap)
+        private static Bitmap MapColors(SpriteDefinition definition, Bitmap palette, Bitmap celBitmap)
         {
-            var resultBitmap = new Bitmap(frame.Frame.W, frame.Frame.H, PixelFormat.Format8bppIndexed);
+            var resultBitmap = new Bitmap(celBitmap.Width, celBitmap.Height, PixelFormat.Format8bppIndexed);
             var resultPalette = resultBitmap.Palette;
             for (int i = 0; i < resultPalette.Entries.Length; i++)
             {

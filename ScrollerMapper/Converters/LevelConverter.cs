@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
@@ -24,6 +25,7 @@ namespace ScrollerMapper.Converters
         private readonly SpriteRenderer _spriteRenderer;
         private readonly IWriter _writer;
         private Dictionary<string, BobInfo> _bobs;
+        private int _bobIndex;
         private Dictionary<string, PathInfo> _paths;
         private Dictionary<string, EnemyInfo> _enemies;
         private int _scoreboardHeight;
@@ -44,6 +46,7 @@ namespace ScrollerMapper.Converters
             _paletteRenderer = paletteRenderer;
             _spriteRenderer = spriteRenderer;
             _writer = writer;
+            _bobs = new Dictionary<string, BobInfo>();
         }
 
         public void ConvertAll()
@@ -55,6 +58,8 @@ namespace ScrollerMapper.Converters
                 ConvertTiles(definition);
             }
 
+            var bobPalette = definition.BobPaletteFile.FromInputFolder().LoadIndexedBitmap();
+
             if (definition.SpritePaletteFile != null)
             {
                 var paletteBitmap = definition.SpritePaletteFile.FromInputFolder().LoadIndexedBitmap();
@@ -64,6 +69,13 @@ namespace ScrollerMapper.Converters
                 if (definition.Player != null)
                 {
                     _spriteRenderer.Render("player", definition.Player.MainSprite);
+                    if ( definition.Player.Shots == null ) throw new ConversionException("Must define 'shots' for 'player'");
+                    if (definition.Player.Shots.Bob == null) throw new ConversionException("Must define 'main' for 'player.shots'");
+
+                    ConvertBob("shot", definition.Player.Shots.Bob, definition, bobPalette);
+                    _writer.WriteCode(Code.Normal, $"BULLET_VX\t\tequ\t{definition.Player.Shots.Vx}");
+                    _writer.WriteCode(Code.Normal, $"BULLET_COOLDOWN\t\tequ\t{definition.Player.Shots.Cooldown}");
+                    _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{definition.Player.Shots.MaxCount}");
                 }
             }
             else if (definition.Player != null)
@@ -71,10 +83,12 @@ namespace ScrollerMapper.Converters
                 throw new ConversionException("You must specify a SpritePaletteFile to have a sprite.");
             }
 
-
-            foreach (var imageDefinition in definition.Images)
+            if (definition.Images != null)
             {
-                _imageConverter.ConvertAll(imageDefinition.Key, imageDefinition.Value);
+                foreach (var imageDefinition in definition.Images)
+                {
+                    _imageConverter.ConvertAll(imageDefinition.Key, imageDefinition.Value);
+                }
             }
 
             if (definition.Panel != null)
@@ -91,26 +105,13 @@ namespace ScrollerMapper.Converters
             // Move all of this in its own?
             WriteBobComments();
 
-            var bobPalette = definition.BobPaletteFile.FromInputFolder().LoadIndexedBitmap();
             ConvertBobPalette(bobPalette.Palette, definition);
 
-            _bobs = new Dictionary<string, BobInfo>();
-            var index = 0;
             foreach (var bob in definition.Bobs)
             {
-                _bobConverter.ConvertAll(bob.Key, bob.Value, definition.BobPlaneCount, bobPalette.Palette);
-                _bobs.Add(bob.Key, new BobInfo {Index = index++, Name = bob.Key});
+                ConvertBob(bob.Key, bob.Value, definition, bobPalette);
             }
-
-            _writer.WriteCode(Code.Normal, "\tsection\tdata");
-            _writer.WriteCode(Code.Normal, $"\nBOB_COUNT\t\tequ\t{definition.Bobs.Count}");
-            _writer.WriteCode(Code.Normal, "\n\n** Pointers to all loaded Bobs\n");
-            _writer.WriteCode(Code.Normal, "BobPtrs:");
-            foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
-            {
-                _writer.WriteCode(Code.Normal, $"\tdc.l\t{bob.Value.Name}Bob");
-            }
-
+            
             _writer.WriteCode(Code.Normal, "\n\n");
             _writer.WriteCode(Code.Normal, $"LEVEL_WIDTH\t\tequ\t\t{definition.Level.Width}");
 
@@ -118,6 +119,13 @@ namespace ScrollerMapper.Converters
             WriteEnemies(definition);
             WritePaths(definition.Paths);
             WriteWaves(definition);
+            WriteBobList();
+        }
+
+        private void ConvertBob(string name,  BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
+        {
+            _bobConverter.ConvertAll(name, bob, definition.BobPlaneCount, bobPalette.Palette);
+            _bobs.Add(name, new BobInfo {Index = _bobIndex++, Name = name});
         }
 
         private void ConvertTiles(LevelDefinition definition)
@@ -370,6 +378,19 @@ namespace ScrollerMapper.Converters
 
 
             _writer.WriteCode(Code.Normal, lookup.ToString());
+        }
+
+        private void WriteBobList()
+        {
+            _writer.WriteCode(Code.Normal, "\tsection\tdata");
+            _writer.WriteCode(Code.Normal, $"\nBOB_COUNT\t\tequ\t{_bobs.Count}");
+            _writer.WriteCode(Code.Normal, "\n\n** Pointers to all loaded Bobs\n");
+            _writer.WriteCode(Code.Normal, "BobPtrs:");
+            foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
+            {
+                _writer.WriteCode(Code.Normal, $"\tdc.l\t{bob.Value.Name}Bob");
+            }
+
         }
     }
 }
