@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace ScrollerMapper.DefinitionModels
 {
@@ -17,6 +18,9 @@ namespace ScrollerMapper.DefinitionModels
         public PlayerDefinition Player { get; set; }
         public int MaxActiveWaves { get; set; }
         public int MaxActiveEnemies { get; set; }
+
+        [DefaultValue(4)] public int FixedPointBits { get; set; } = 4;
+
         public LevelDetailsDefinition Level { get; set; }
 
         public void Validate()
@@ -50,13 +54,15 @@ namespace ScrollerMapper.DefinitionModels
 
     internal class LevelDetailsDefinition
     {
-        public int Width { get; set; }
+        public int Width { get; set; } = 1024;
     }
 
     internal class PlayerDefinition
     {
         public SpriteDefinition MainSprite { get; set; }
         public ShotsDefinition Shots { get; set; }
+        public int? Vx { get; set; }
+        public int? Vy { get; set; }
     }
 
     internal class ShotsDefinition

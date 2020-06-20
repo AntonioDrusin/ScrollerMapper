@@ -76,6 +76,12 @@ namespace ScrollerMapper.Converters
                     _writer.WriteCode(Code.Normal, $"BULLET_VX\t\tequ\t{definition.Player.Shots.Vx}");
                     _writer.WriteCode(Code.Normal, $"BULLET_COOLDOWN\t\tequ\t{definition.Player.Shots.Cooldown}");
                     _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{definition.Player.Shots.MaxCount}");
+                    var playerVx = definition.Player.Vx.GetValueOrDefault(32);
+                    var playerVy = definition.Player.Vy.GetValueOrDefault(32);
+                    var playerVxy = Math.Sin(Math.PI / 4) * (playerVx + playerVy) / 2;
+                    _writer.WriteCode(Code.Normal, $"PLAYER_VX\t\tequ\t{playerVx}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_VY\t\tequ\t{playerVy}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_VD\t\tequ\t{(int)playerVxy}");
                 }
             }
             else if (definition.Player != null)
@@ -113,7 +119,10 @@ namespace ScrollerMapper.Converters
             }
             
             _writer.WriteCode(Code.Normal, "\n\n");
+
             _writer.WriteCode(Code.Normal, $"LEVEL_WIDTH\t\tequ\t\t{definition.Level.Width}");
+            _writer.WriteCode(Code.Normal, $"FXP_SHIFT\t\tequ\t\t{definition.FixedPointBits}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
+
 
             WriteMapLookup(definition);
             WriteEnemies(definition);
@@ -347,16 +356,18 @@ namespace ScrollerMapper.Converters
 
         private void WriteMapLookup(LevelDefinition definition)
         {
-            var xShift = Math.Log(definition.Level.Width / 256.0, 2);
+            var xShift = (int)(Math.Log(definition.Level.Width / 256.0, 2)+0.5);
             _writer.WriteCode(Code.Normal,
                 $"MAP_XSHIFT\t\tequ\t\t{xShift}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
 
             _writer.WriteCode(Code.Normal,
-                "\n\nMapXLookup: ; given X>>MAP_XSHIFT returns x coordinate for the point in the map");
+                "\n\nMapXLookup: ; given X>>FXP_SHIFT returns x coordinate for the point in the map");
+
+            var shiftedLevelWidth = definition.Level.Width >> xShift;
             var lookup = new StringBuilder();
             for (int x = 0; x < 256; x++)
             {
-                int mapX = x * definition.Panel.Map.Width / 255 + definition.Panel.Map.X;
+                int mapX = x * definition.Panel.Map.Width / shiftedLevelWidth + definition.Panel.Map.X;
                 lookup.Append(x % 32 == 0 ? "\n\tdc.w\t" : ",");
                 lookup.Append($"{mapX}");
             }
@@ -369,7 +380,6 @@ namespace ScrollerMapper.Converters
             {
 
                 var mappedY = (y + definition.Panel.Map.Y) * mapHeight / levelHeight;
-
                 var offset =
                     mappedY * BytesPerRow * definition.Panel.Scoreboard.PlaneCount;
                 lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
