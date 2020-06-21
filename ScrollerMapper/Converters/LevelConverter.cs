@@ -29,6 +29,7 @@ namespace ScrollerMapper.Converters
         private Dictionary<string, PathInfo> _paths;
         private Dictionary<string, EnemyInfo> _enemies;
         private int _scoreboardHeight;
+        private LevelDefinition _definition;
 
         public LevelConverter(
             Options options,
@@ -51,87 +52,91 @@ namespace ScrollerMapper.Converters
 
         public void ConvertAll()
         {
-            var definition = _options.InputFile.ReadJsonFile<LevelDefinition>();
-            definition.Validate();
-            if (definition.Tiles != null)
+            _definition = _options.InputFile.ReadJsonFile<LevelDefinition>();
+            _definition.Validate();
+            if (_definition.Tiles != null)
             {
-                ConvertTiles(definition);
+                ConvertTiles(_definition);
             }
 
-            var bobPalette = definition.BobPaletteFile.FromInputFolder().LoadIndexedBitmap();
+            var bobPalette = _definition.BobPaletteFile.FromInputFolder().LoadIndexedBitmap();
 
-            if (definition.SpritePaletteFile != null)
+            if (_definition.SpritePaletteFile != null)
             {
-                var paletteBitmap = definition.SpritePaletteFile.FromInputFolder().LoadIndexedBitmap();
+                var paletteBitmap = _definition.SpritePaletteFile.FromInputFolder().LoadIndexedBitmap();
 
                 _paletteRenderer.Render("sprite", paletteBitmap.Palette, 16);
 
-                if (definition.Player != null)
+                if (_definition.Player != null)
                 {
-                    _spriteRenderer.Render("player", definition.Player.MainSprite);
-                    if ( definition.Player.Shots == null ) throw new ConversionException("Must define 'shots' for 'player'");
-                    if (definition.Player.Shots.Bob == null) throw new ConversionException("Must define 'main' for 'player.shots'");
+                    _spriteRenderer.Render("player", _definition.Player.MainSprite);
+                    if (_definition.Player.Shots == null)
+                        throw new ConversionException("Must define 'shots' for 'player'");
+                    if (_definition.Player.Shots.Bob == null)
+                        throw new ConversionException("Must define 'main' for 'player.shots'");
 
-                    ConvertBob("shot", definition.Player.Shots.Bob, definition, bobPalette);
-                    _writer.WriteCode(Code.Normal, $"BULLET_VX\t\tequ\t{definition.Player.Shots.Vx}");
-                    _writer.WriteCode(Code.Normal, $"BULLET_COOLDOWN\t\tequ\t{definition.Player.Shots.Cooldown}");
-                    _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{definition.Player.Shots.MaxCount}");
-                    var playerVx = definition.Player.Vx.GetValueOrDefault(32);
-                    var playerVy = definition.Player.Vy.GetValueOrDefault(32);
+                    ConvertBob("shot", _definition.Player.Shots.Bob, _definition, bobPalette);
+                    _writer.WriteCode(Code.Normal, $"BULLET_VX\t\tequ\t{(int)(_definition.Player.Shots.Vx)}");
+                    _writer.WriteCode(Code.Normal, $"BULLET_COOLDOWN\t\tequ\t{_definition.Player.Shots.Cooldown}");
+                    _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{_definition.Player.Shots.MaxCount}");
+                    var playerVx = (int)(_definition.Player.Vx.GetValueOrDefault(32));
+                    var playerVy = (int)(_definition.Player.Vy.GetValueOrDefault(32));
                     var playerVxy = Math.Sin(Math.PI / 4) * (playerVx + playerVy) / 2;
                     _writer.WriteCode(Code.Normal, $"PLAYER_VX\t\tequ\t{playerVx}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_VY\t\tequ\t{playerVy}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_VD\t\tequ\t{(int)playerVxy}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_VD\t\tequ\t{(int) playerVxy}");
                 }
             }
-            else if (definition.Player != null)
+            else if (_definition.Player != null)
             {
                 throw new ConversionException("You must specify a SpritePaletteFile to have a sprite.");
             }
 
-            if (definition.Images != null)
+            if (_definition.Images != null)
             {
-                foreach (var imageDefinition in definition.Images)
+                foreach (var imageDefinition in _definition.Images)
                 {
                     _imageConverter.ConvertAll(imageDefinition.Key, imageDefinition.Value);
                 }
             }
 
-            if (definition.Panel != null)
+            if (_definition.Panel != null)
             {
-                _imageConverter.ConvertAll("ScoreFont", definition.Panel.Font);
+                _imageConverter.ConvertAll("ScoreFont", _definition.Panel.Font);
                 _writer.WriteCode(Code.Normal, $"; Score location");
-                _writer.WriteCode(Code.Normal, $"SCORE_X\t\tequ\t{definition.Panel.X}");
-                _writer.WriteCode(Code.Normal, $"SCORE_Y\t\tequ\t{definition.Panel.Y}");
+                _writer.WriteCode(Code.Normal, $"SCORE_X\t\tequ\t{_definition.Panel.X}");
+                _writer.WriteCode(Code.Normal, $"SCORE_Y\t\tequ\t{_definition.Panel.Y}");
 
-                var scoreboardInfo = _imageConverter.ConvertAll("Scoreboard", definition.Panel.Scoreboard);
+                var scoreboardInfo = _imageConverter.ConvertAll("Scoreboard", _definition.Panel.Scoreboard);
                 _scoreboardHeight = scoreboardInfo.Height;
             }
 
             // Move all of this in its own?
             WriteBobComments();
 
-            ConvertBobPalette(bobPalette.Palette, definition);
+            ConvertBobPalette(bobPalette.Palette);
 
-            foreach (var bob in definition.Bobs)
+            foreach (var bob in _definition.Bobs)
             {
-                ConvertBob(bob.Key, bob.Value, definition, bobPalette);
+                ConvertBob(bob.Key, bob.Value, _definition, bobPalette);
             }
-            
+
             _writer.WriteCode(Code.Normal, "\n\n");
 
-            _writer.WriteCode(Code.Normal, $"LEVEL_WIDTH\t\tequ\t\t{definition.Level.Width}");
-            _writer.WriteCode(Code.Normal, $"FXP_SHIFT\t\tequ\t\t{definition.FixedPointBits}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
+            _writer.WriteCode(Code.Normal, $"LEVEL_WIDTH\t\tequ\t\t{_definition.Level.Width}");
+            _writer.WriteCode(Code.Normal,
+                $"FXP_SHIFT\t\tequ\t\t{_definition.FixedPointBits}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
 
 
-            WriteMapLookup(definition);
-            WriteEnemies(definition);
-            WritePaths(definition.Paths);
-            WriteWaves(definition);
+            WriteMapLookup();
+            WriteMainLookup();
+            WriteEnemies(_definition);
+            WritePaths(_definition.Paths);
+            WriteWaves(_definition);
             WriteBobList();
         }
 
-        private void ConvertBob(string name,  BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
+        private void ConvertBob(string name, BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
         {
             _bobConverter.ConvertAll(name, bob, definition.BobPlaneCount, bobPalette.Palette);
             _bobs.Add(name, new BobInfo {Index = _bobIndex++, Name = name});
@@ -349,43 +354,59 @@ namespace ScrollerMapper.Converters
             _writer.WriteCode(Code.Normal, "");
         }
 
-        private void ConvertBobPalette(ColorPalette palette, LevelDefinition definition)
+        private void ConvertBobPalette(ColorPalette palette)
         {
-            _paletteRenderer.Render("bob", palette, definition.BobPlaneCount.PowerOfTwo());
+            _paletteRenderer.Render("bob", palette, _definition.BobPlaneCount.PowerOfTwo());
         }
 
-        private void WriteMapLookup(LevelDefinition definition)
+        private void WriteMapLookup()
         {
-            var xShift = (int)(Math.Log(definition.Level.Width / 256.0, 2)+0.5);
+            var xShift = (int) (Math.Log(_definition.Level.Width / 256.0, 2) + 0.5);
             _writer.WriteCode(Code.Normal,
                 $"MAP_XSHIFT\t\tequ\t\t{xShift}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
 
             _writer.WriteCode(Code.Normal,
                 "\n\nMapXLookup: ; given X>>FXP_SHIFT returns x coordinate for the point in the map");
 
-            var shiftedLevelWidth = definition.Level.Width >> xShift;
+            var shiftedLevelWidth = _definition.Level.Width >> xShift;
             var lookup = new StringBuilder();
             for (int x = 0; x < 256; x++)
             {
-                int mapX = x * definition.Panel.Map.Width / shiftedLevelWidth + definition.Panel.Map.X;
+                int mapX = x * _definition.Panel.Map.Width / shiftedLevelWidth + _definition.Panel.Map.X;
                 lookup.Append(x % 32 == 0 ? "\n\tdc.w\t" : ",");
                 lookup.Append($"{mapX}");
             }
 
             var levelHeight = ScreenHeight - _scoreboardHeight;
-            var mapHeight = definition.Panel.Map.Height;
+            var mapHeight = _definition.Panel.Map.Height;
             lookup.Append(
                 "\n\nMapYLookup: ; given the Y returns the offset form the beginning of the score bitmap");
             for (int y = 0; y < 256; y++)
             {
-
-                var mappedY = (y + definition.Panel.Map.Y) * mapHeight / levelHeight;
+                var mappedY = (y + _definition.Panel.Map.Y) * mapHeight / levelHeight;
                 var offset =
-                    mappedY * BytesPerRow * definition.Panel.Scoreboard.PlaneCount;
+                    mappedY * BytesPerRow * _definition.Panel.Scoreboard.PlaneCount;
                 lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
                 lookup.Append($"{offset}");
             }
 
+
+            _writer.WriteCode(Code.Normal, lookup.ToString());
+        }
+
+        private void WriteMainLookup()
+        {
+            var random = new Random();
+            var lookup = new StringBuilder();
+            lookup.Append(
+                "\n\nMainYLookup: ; given the Y returns the offset form the beginning of the score bitmap");
+            for (var y = 0; y < 256; y++)
+            {
+                var r = random.Next(0, 3);
+                var offset = y * ((40 + 8) * 4) + r*(40+8);
+                lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
+                lookup.Append($"{offset}");
+            }
 
             _writer.WriteCode(Code.Normal, lookup.ToString());
         }
@@ -400,7 +421,6 @@ namespace ScrollerMapper.Converters
             {
                 _writer.WriteCode(Code.Normal, $"\tdc.l\t{bob.Value.Name}Bob");
             }
-
         }
     }
 }
