@@ -18,6 +18,9 @@ namespace ScrollerMapper.DefinitionModels
         public PlayerDefinition Player { get; set; }
         public int MaxActiveWaves { get; set; }
         public int MaxActiveEnemies { get; set; }
+        public int MainVerticalBorder { get; set; } = 32;
+        public int MainHorizontalBorder { get; set; } = 32;
+
 
         [DefaultValue(4)] public int FixedPointBits { get; set; } = 4;
 

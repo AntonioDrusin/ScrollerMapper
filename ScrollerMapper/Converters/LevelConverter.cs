@@ -76,11 +76,11 @@ namespace ScrollerMapper.Converters
                         throw new ConversionException("Must define 'main' for 'player.shots'");
 
                     ConvertBob("shot", _definition.Player.Shots.Bob, _definition, bobPalette);
-                    _writer.WriteCode(Code.Normal, $"BULLET_VX\t\tequ\t{(int)(_definition.Player.Shots.Vx)}");
+                    _writer.WriteCode(Code.Normal, $"BULLET_VX\t\tequ\t{(int) (_definition.Player.Shots.Vx)}");
                     _writer.WriteCode(Code.Normal, $"BULLET_COOLDOWN\t\tequ\t{_definition.Player.Shots.Cooldown}");
                     _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{_definition.Player.Shots.MaxCount}");
-                    var playerVx = (int)(_definition.Player.Vx.GetValueOrDefault(32));
-                    var playerVy = (int)(_definition.Player.Vy.GetValueOrDefault(32));
+                    var playerVx = (int) (_definition.Player.Vx.GetValueOrDefault(32));
+                    var playerVy = (int) (_definition.Player.Vy.GetValueOrDefault(32));
                     var playerVxy = Math.Sin(Math.PI / 4) * (playerVx + playerVy) / 2;
                     _writer.WriteCode(Code.Normal, $"PLAYER_VX\t\tequ\t{playerVx}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_VY\t\tequ\t{playerVy}");
@@ -398,12 +398,20 @@ namespace ScrollerMapper.Converters
         {
             var random = new Random();
             var lookup = new StringBuilder();
+
+            if (_definition.MainHorizontalBorder % 8 != 0)
+                throw new ConversionException("MainHorizontalBorder must be multiple of 8");
+            _writer.WriteCode(Code.Normal, $"MAIN_BORDERHB=\t\t{_definition.MainHorizontalBorder / 8}");
+            _writer.WriteCode(Code.Normal, $"MAIN_BORDERH=\t\t{_definition.MainHorizontalBorder}");
+            _writer.WriteCode(Code.Normal, $"MAIN_BORDERV=\t\t{_definition.MainVerticalBorder}");
+
             lookup.Append(
-                "\n\nMainYLookup: ; given the Y returns the offset form the beginning of the score bitmap");
+                "\n\nMainYRandomLookup: ; given the Y returns the offset form the beginning of the score bitmap");
+            var oneRowModulo = 40 + 2 * _definition.MainHorizontalBorder / 8;
             for (var y = 0; y < 256; y++)
             {
                 var r = random.Next(0, 3);
-                var offset = y * ((40 + 8) * 4) + r*(40+8);
+                var offset = y * oneRowModulo * 4 + r * oneRowModulo;
                 lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
                 lookup.Append($"{offset}");
             }
