@@ -9,17 +9,20 @@ namespace ScrollerMapper.Transformers
         void SetBitmap(Bitmap bitmap);
         int GetByteWidth();
         int GetHeight();
-        byte[] GetBitplanes(int bitplaneCount);
+        byte[] GetBitplanes(int planeCount);
         byte[] GetInterleaved(int planeCount);
+        void FlipColors(byte color1, byte color2);
     }
 
     internal class BitmapTransformer : IBitmapTransformer
     {
         private Bitmap _bitmap;
+        private byte[] _source;
 
         public void SetBitmap(Bitmap bitmap)
         {
             _bitmap = bitmap;
+            _source = _bitmap.GetImageBytes();
         }
 
         public int GetByteWidth()
@@ -38,22 +41,31 @@ namespace ScrollerMapper.Transformers
             return _bitmap.Height;
         }
 
-        public byte[] GetBitplanes(int bitplaneCount)
+
+        public void FlipColors(byte color1, byte color2)
+        {
+            for (int t = 0; t < _source.Length; t++)
+            {
+                var color = _source[t];
+                if (color == color1) _source[t] = color2;
+                else if (color == color2) _source[t] = color1;
+            }
+        }
+
+        public byte[] GetBitplanes(int planeCount)
         {
             ValidateBitmap(_bitmap);
             var byteWidth = GetByteWidth();
             var width = _bitmap.Width;
             var height = GetHeight();
 
-            var converted = new byte[byteWidth * height * bitplaneCount];
+            var converted = new byte[byteWidth * height * planeCount];
 
 
             byte bplTest = 1;
             
-            var source = _bitmap.GetImageBytes();
-
             var convertIndex = 0;
-            for (int bitplane = 0; bitplane < bitplaneCount; bitplane++)
+            for (int bitplane = 0; bitplane < planeCount; bitplane++)
             {
                 for (int y = 0; y < height; y++)
                 {
@@ -67,7 +79,7 @@ namespace ScrollerMapper.Transformers
                         {
                             if ((x*8 + b) < width)
                             {
-                                result = (byte) (result | (source[(x*8) + b + y * width] & bplTest) >> bitplane << shift--);
+                                result = (byte) (result | (_source[(x*8) + b + y * width] & bplTest) >> bitplane << shift--);
                             }
                         }
 

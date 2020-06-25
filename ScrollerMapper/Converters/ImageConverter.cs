@@ -1,6 +1,7 @@
 ﻿using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.ImageRenderers;
 using ScrollerMapper.PaletteRenderers;
+using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper.Converters
 {
@@ -20,7 +21,8 @@ namespace ScrollerMapper.Converters
             var fileName = definition.ImageFile;
             var image = fileName.FromInputFolder().LoadIndexedBitmap();
             _bitplaneRenderer.Render(name, image, definition.PlaneCount);
-            _paletteRenderer.Render(name, image.Palette, definition.PlaneCount.PowerOfTwo());
+            var palette = new PaletteTransformer(name, image.Palette, definition.PlaneCount.PowerOfTwo());
+            _paletteRenderer.Render(palette);
             return new ImageInfo { 
                 Height = image.Height,
             };

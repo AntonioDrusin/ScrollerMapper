@@ -14,6 +14,7 @@ namespace ScrollerMapper.DefinitionModels
         public PanelDefinition Panel { get; set; }
         public int BobPlaneCount { get; set; }
         public string BobPaletteFile { get; set; }
+        public bool BobPaletteFlip0AndLast { get; set; } = false;
         public string SpritePaletteFile { get; set; }
         public PlayerDefinition Player { get; set; }
         public int MaxActiveWaves { get; set; }

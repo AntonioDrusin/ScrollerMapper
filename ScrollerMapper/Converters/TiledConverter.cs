@@ -3,6 +3,7 @@ using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.LayerInfoRenderers;
 using ScrollerMapper.PaletteRenderers;
 using ScrollerMapper.TileRenderers;
+using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper.Converters
 {
@@ -40,7 +41,8 @@ namespace ScrollerMapper.Converters
             }
 
             var image = tileSet.ImageFileName.FromInputFolder().LoadIndexedBitmap();
-            _paletteRenderer.Render(name, image.Palette, definition.PlaneCount.PowerOfTwo());
+            var palette = new PaletteTransformer(name, image.Palette, definition.PlaneCount.PowerOfTwo());
+            _paletteRenderer.Render(palette);
             _tileRenderer.Render(name, image, tileWidth, tileHeight, definition.PlaneCount);
 
             var layer = tiled.Layer;

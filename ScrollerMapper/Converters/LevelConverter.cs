@@ -65,7 +65,8 @@ namespace ScrollerMapper.Converters
             {
                 var paletteBitmap = _definition.SpritePaletteFile.FromInputFolder().LoadIndexedBitmap();
 
-                _paletteRenderer.Render("sprite", paletteBitmap.Palette, 16);
+                var palette = new PaletteTransformer("sprite", paletteBitmap.Palette, 16);
+                _paletteRenderer.Render(palette);
 
                 if (_definition.Player != null)
                 {
@@ -114,7 +115,7 @@ namespace ScrollerMapper.Converters
             // Move all of this in its own?
             WriteBobComments();
 
-            ConvertBobPalette(bobPalette.Palette);
+            RenderBobPalette(bobPalette.Palette);
 
             foreach (var bob in _definition.Bobs)
             {
@@ -138,7 +139,7 @@ namespace ScrollerMapper.Converters
 
         private void ConvertBob(string name, BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
         {
-            _bobConverter.ConvertAll(name, bob, definition.BobPlaneCount, bobPalette.Palette);
+            _bobConverter.ConvertBob(name, bob, definition.BobPlaneCount, bobPalette.Palette, _definition.BobPaletteFlip0AndLast);
             _bobs.Add(name, new BobInfo {Index = _bobIndex++, Name = name});
         }
 
@@ -354,9 +355,14 @@ namespace ScrollerMapper.Converters
             _writer.WriteCode(Code.Normal, "");
         }
 
-        private void ConvertBobPalette(ColorPalette palette)
+        private void RenderBobPalette(ColorPalette bitmapPalette)
         {
-            _paletteRenderer.Render("bob", palette, _definition.BobPlaneCount.PowerOfTwo());
+            var palette = new PaletteTransformer("bob", bitmapPalette, _definition.BobPlaneCount.PowerOfTwo());
+            if (_definition.BobPaletteFlip0AndLast)
+            {
+                palette.Flip(0, palette.Length-1);
+            }
+            _paletteRenderer.Render(palette);
         }
 
         private void WriteMapLookup()

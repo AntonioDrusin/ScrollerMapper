@@ -66,7 +66,7 @@ namespace ScrollerMapperTests
             CollectionAssert.AreEqual(source, interleaved);
 
 
-            _renderer.Render("test", bitmap, new BobDefinition {Width = 8} , 3);
+            _renderer.Render("test", bitmap, new BobDefinition {Width = 8} , 3, false);
             var result = _writer.Data;
 
             var expected = new byte[]

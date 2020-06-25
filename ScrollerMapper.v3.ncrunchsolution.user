@@ -9,7 +9,7 @@
       <ShowUnexecutedTestsMenuOption>true</ShowUnexecutedTestsMenuOption>
       <ShowIgnoredTestsMenuOption>false</ShowIgnoredTestsMenuOption>
     </TestsWindowMenuOptions>
-    <TestsWindowSplitterDistance>140</TestsWindowSplitterDistance>
+    <TestsWindowSplitterDistance>421</TestsWindowSplitterDistance>
     <TestsWindowTreeLayout>
       <Column>
         <Name>Name</Name>

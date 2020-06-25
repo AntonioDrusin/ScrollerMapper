@@ -30,7 +30,7 @@ namespace ScrollerMapperTests.Services
             return _height;
         }
 
-        public byte[] GetBitplanes(int bitplaneCount)
+        public byte[] GetBitplanes(int planeCount)
         {
             return _array;
         }
@@ -38,6 +38,11 @@ namespace ScrollerMapperTests.Services
         public byte[] GetInterleaved(int planeCount)
         {
             return _array;
+        }
+
+        public void FlipColors(byte color1, byte color2)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

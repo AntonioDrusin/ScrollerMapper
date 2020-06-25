@@ -69,6 +69,7 @@
     <Compile Include="BitplaneRenderers\BinaryFontRenderer.cs" />
     <Compile Include="TileRenderers\BinaryTileRenderer.cs" />
     <Compile Include="Transformers\IndexedTransformer.cs" />
+    <Compile Include="Transformers\PaletteTransformer.cs" />
     <Compile Include="Transformers\SmoothInputPathTransformer.cs" />
     <Compile Include="Writers\IWriter.cs" />
     <Compile Include="Transformers\BitmapTransformer.cs" />

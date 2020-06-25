@@ -13,10 +13,10 @@ namespace ScrollerMapper.Converters
             _bobRenderer = bobRenderer;
         }
 
-        public void ConvertAll(string name, BobDefinition definition, int planes, ColorPalette palette)
+        public void ConvertBob(string name, BobDefinition definition, int planes, ColorPalette palette, bool colorFlip)
         {
             var image = definition.ImageFile.FromInputFolder().LoadIndexedBitmap(palette);
-            _bobRenderer.Render(name, image, definition, planes);
+            _bobRenderer.Render(name, image, definition, planes, colorFlip);
         }
     }
 }

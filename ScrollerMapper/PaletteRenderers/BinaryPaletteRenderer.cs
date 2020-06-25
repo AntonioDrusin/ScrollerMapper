@@ -1,6 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
+﻿using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper.PaletteRenderers
 {
@@ -15,23 +13,14 @@ namespace ScrollerMapper.PaletteRenderers
 
         // Renders the palette in one file with each color as a word formatted in bigendian.
         // 0x0RGB
-        public void Render(string name, ColorPalette palette, int maxValues)
+        public void Render(PaletteTransformer palette)
         {
-            palette.ValidatePalette(name, maxValues);
-            _writer.StartObject(ObjectType.Palette, name);
+            _writer.StartObject(ObjectType.Palette, palette.Name);
 
-            if (maxValues != palette.Entries.Length)
+            foreach (var color in palette.Colors)
             {
-                Console.WriteLine($"Warning palette {name} has {palette.Entries.Length} entries instead of {maxValues}");
+                _writer.WriteWord(color);
             }
-
-            for (var i = 0; i < Math.Min(maxValues, palette.Entries.Length); i++)
-            {
-                var entry = palette.Entries.Length >= i ? palette.Entries[i] : Color.Black;
-                var colors = (ushort) (((entry.R & 0xf0) << 4) | ((entry.G & 0xf0)) | ((entry.B & 0xf0) >> 4));
-                _writer.WriteWord(colors);
-            }
-
             _writer.EndObject();
         }
     }

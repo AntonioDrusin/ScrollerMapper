@@ -8,7 +8,7 @@ namespace ScrollerMapper.BitplaneRenderers
 {
     internal interface IBobRenderer
     {
-        void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount);
+        void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, bool colorFlip);
     }
 
     internal class BinaryBobRenderer : IBobRenderer
@@ -18,6 +18,7 @@ namespace ScrollerMapper.BitplaneRenderers
         private int _planeCount;
         private BobDefinition _definition;
         private int _bobWordWidth;
+        private bool _colorFlip;
 
         public BinaryBobRenderer(IWriter writer, IBitmapTransformer transformer)
         {
@@ -25,11 +26,16 @@ namespace ScrollerMapper.BitplaneRenderers
             _transformer = transformer;
         }
 
-        public void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount)
+        // colorFlip:
+        // 1. color 0 becomes color 15
+        // 1. color 15 becomes color 0
+        // 1. all of color 15 are now transparent
+        public void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, bool colorFlip)
         {
             _definition = definition;
             _planeCount = planeCount;
             _bobWordWidth = (_definition.Width / 8 + 1) / 2;
+            _colorFlip = colorFlip;
 
             var width = definition.Width;
             if (width % 8 != 0)
@@ -68,7 +74,16 @@ namespace ScrollerMapper.BitplaneRenderers
                 info[i] = currentBob;
                 
                 var bobBitmap = bitmap.Clone(new Rectangle(bobX * width, bobY * height, width, height), bitmap.PixelFormat);
+
                 _transformer.SetBitmap(bobBitmap);
+
+                byte transparent = 0;
+                if (_colorFlip)
+                {
+                    transparent = (byte)((1 << _planeCount)-1);
+                    _transformer.FlipColors(0, transparent);
+                }
+                
                 var planes = _transformer.GetInterleaved(_planeCount); // This will bump up to word size...
 
                 if (planes.Any(_ => _ != 0))
@@ -78,19 +93,35 @@ namespace ScrollerMapper.BitplaneRenderers
                     {
                         var rowData = new byte[_bobWordWidth * 2 * _planeCount];
                         var rowMask = new byte[_bobWordWidth * 2 * _planeCount];
+
+                        if (_colorFlip)
+                        {
+                            ArrayFill(rowData, transparent);
+                        }
+
                         for (var x = 0; x < width / 8; x++)
                         {
-                            byte mask = 0;
+
+                            byte mask = _colorFlip ? (byte)0xff : (byte)0x00;
+
                             for (var bpl = 0; bpl < _planeCount; bpl++)
                             {
                                 var value = planes[y * _planeCount * _bobWordWidth * 2 + bpl * _bobWordWidth * 2 + x];
                                 rowData[bpl * _bobWordWidth * 2 + x] = value;
-                                mask |= value;
+
+                                if (_colorFlip)
+                                {
+                                    mask &= value;
+                                }
+                                else
+                                {
+                                    mask |= value;
+                                }
                             }
 
                             for (var bpl = 0; bpl < _planeCount; bpl++)
                             {
-                                rowMask[bpl * _bobWordWidth * 2 + x] = mask;
+                                rowMask[bpl * _bobWordWidth * 2 + x] = _colorFlip ? (byte)~mask : (byte)mask;
                             }
                         }
 
@@ -116,6 +147,14 @@ namespace ScrollerMapper.BitplaneRenderers
 
             AdjustBobs(info, initialOffset);
             WriteBobs(info);
+        }
+
+        private void ArrayFill(byte[] rowData, byte transparent)
+        {
+            for (int i = 0; i < rowData.Length; i++)
+            {
+                rowData[i] = transparent;
+            }
         }
 
         private void WriteBobs(BobData[] info)
