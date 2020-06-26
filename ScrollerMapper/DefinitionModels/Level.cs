@@ -11,6 +11,7 @@ namespace ScrollerMapper.DefinitionModels
         public Dictionary<string, EnemyDefinition> Enemies { get; set; }
         public Dictionary<string, WaveDefinition> Waves { get; set; }
         public Dictionary<string, PathDefinition> Paths { get; set; }
+        public BackgroundDefinition Background { get; set; }
         public PanelDefinition Panel { get; set; }
         public int BobPlaneCount { get; set; }
         public string BobPaletteFile { get; set; }
@@ -54,6 +55,17 @@ namespace ScrollerMapper.DefinitionModels
                 throw new ConversionException("'enemies' must be defined.");
             }
         }
+    }
+
+    internal class BackgroundDefinition
+    {
+        public CopperShadeDefinition CopperShade { get; set; }
+    }
+
+    internal class CopperShadeDefinition
+    {
+        public ushort[] Colors { get; set; }
+        public bool Flicker { get; set; } = false;
     }
 
     internal class LevelDetailsDefinition

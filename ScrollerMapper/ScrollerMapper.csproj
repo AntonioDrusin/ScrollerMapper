@@ -64,9 +64,12 @@
     <Compile Include="Converters\ImageConverter.cs" />
     <Compile Include="Converters\Infos\BobInfo.cs" />
     <Compile Include="Converters\Infos\OutputPathStepInfo.cs" />
-    <Compile Include="Converters\LevelConverter.cs" />
     <Compile Include="DefinitionModels\Level.cs" />
     <Compile Include="BitplaneRenderers\BinaryFontRenderer.cs" />
+    <Compile Include="Transformers\LevelTransformer.cs" />
+    <Compile Include="Processors\CopperShadeProcessor.cs" />
+    <Compile Include="Processors\IProcessor.cs" />
+    <Compile Include="Processors\LevelProcessor.cs" />
     <Compile Include="TileRenderers\BinaryTileRenderer.cs" />
     <Compile Include="Transformers\IndexedTransformer.cs" />
     <Compile Include="Transformers\PaletteTransformer.cs" />
@@ -99,6 +102,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy $(TargetDir)\*.*  $(SolutionDir)\..\toolchain\ToolChain</PostBuildEvent>

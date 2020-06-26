@@ -5,14 +5,16 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using ScrollerMapper.BitplaneRenderers;
+using ScrollerMapper.Converters;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.PaletteRenderers;
 using ScrollerMapper.Transformers;
+using ImageConverter = ScrollerMapper.Converters.ImageConverter;
 
-namespace ScrollerMapper.Converters
+namespace ScrollerMapper.Processors
 {
-    internal class LevelConverter
+    internal class LevelProcessor : IProcessor
     {
         const int BytesPerRow = 40;
         const int ScreenHeight = 256;
@@ -24,14 +26,14 @@ namespace ScrollerMapper.Converters
         private readonly IPaletteRenderer _paletteRenderer;
         private readonly SpriteRenderer _spriteRenderer;
         private readonly IWriter _writer;
-        private Dictionary<string, BobInfo> _bobs;
+        private readonly Dictionary<string, BobInfo> _bobs;
         private int _bobIndex;
         private Dictionary<string, PathInfo> _paths;
         private Dictionary<string, EnemyInfo> _enemies;
         private int _scoreboardHeight;
         private LevelDefinition _definition;
 
-        public LevelConverter(
+        public LevelProcessor(
             Options options,
             TiledConverter tiledConverter,
             ImageConverter imageConverter,
@@ -50,10 +52,10 @@ namespace ScrollerMapper.Converters
             _bobs = new Dictionary<string, BobInfo>();
         }
 
-        public void ConvertAll()
+        public void Process(LevelDefinition definition)
         {
-            _definition = _options.InputFile.ReadJsonFile<LevelDefinition>();
-            _definition.Validate();
+            _definition = definition;
+
             if (_definition.Tiles != null)
             {
                 ConvertTiles(_definition);
@@ -154,7 +156,7 @@ namespace ScrollerMapper.Converters
         private void WriteEnemies(LevelDefinition definition)
         {
             WriteEnemyComments();
-            _writer.WriteCode(Code.Normal, "Enemies:");
+            _writer.WriteCode(Code.Data, "Enemies:");
             _enemies = new Dictionary<string, EnemyInfo>();
 
             var index = 0;
@@ -172,15 +174,15 @@ namespace ScrollerMapper.Converters
                     throw new ConversionException($"Bob '{enemy.Bob}' for enemy '{enemyKeyValue.Key}' was not found.");
                 }
 
-                _writer.WriteCode(Code.Normal, $"\tdc.l\t{bobForEnemy.Name}Bob");
-                _writer.WriteCode(Code.Normal, $"\tdc.w\t{enemy.FrameDelay}\t\t;Cel period");
-                _writer.WriteCode(Code.Normal, $"\tdc.w\t{enemy.Points}\t\t;Points");
+                _writer.WriteCode(Code.Data, $"\tdc.l\t{bobForEnemy.Name}Bob");
+                _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.FrameDelay}\t\t;Cel period");
+                _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.Points}\t\t;Points");
                 _enemies.Add(enemyKeyValue.Key,
                     new EnemyInfo {Name = enemyKeyValue.Key, Index = index++, Offset = offset});
                 offset += 8;
             }
 
-            _writer.WriteCode(Code.Normal, "\n");
+            _writer.WriteCode(Code.Data, "\n");
         }
 
         private void WriteEnemyComments()
@@ -203,7 +205,7 @@ namespace ScrollerMapper.Converters
             var firstTransformer = new SmoothInputPathTransformer();
             var secondTransformer = new OutputPathCoalesceTransformer();
 
-            _writer.WriteCode(Code.Normal, $"Paths:");
+            _writer.WriteCode(Code.Data, $"Paths:");
             var offset = 0;
             var index = 0;
             foreach (var path in definitionPaths)
@@ -212,15 +214,15 @@ namespace ScrollerMapper.Converters
                 finalPath = secondTransformer.GroupPath(finalPath);
 
                 _paths.Add(path.Key, new PathInfo {Name = path.Key, Offset = offset, Index = index++});
-                _writer.WriteCode(Code.Normal, $"; path '{path.Key}', offset {offset}");
+                _writer.WriteCode(Code.Data, $"; path '{path.Key}', offset {offset}");
                 foreach (var step in finalPath)
                 {
-                    _writer.WriteCode(Code.Normal,
+                    _writer.WriteCode(Code.Data,
                         $"\t\tdc.w\t\t{step.FrameCount},{step.VelocityX},{step.VelocityY}");
                     offset += 6;
                 }
 
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t0, 0, 0");
+                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t0, 0, 0");
                 offset += 6;
             }
         }
@@ -246,27 +248,27 @@ namespace ScrollerMapper.Converters
             WriteWaveComments();
             _writer.WriteCode(Code.Normal, $"MaxActiveWaves\t\tequ\t{definition.MaxActiveWaves}");
             _writer.WriteCode(Code.Normal, $"MaxActiveEnemies\t\tequ\t{definition.MaxActiveEnemies}");
-            _writer.WriteCode(Code.Normal, "Waves:");
+            _writer.WriteCode(Code.Data, "Waves:");
             foreach (var wavePair in definition.Waves)
             {
                 var wave = wavePair.Value;
                 var path = GetPathFor(wave.Path, wavePair.Key);
                 var enemy = GetEnemyFor(wave.Enemy, wavePair.Key);
 
-                _writer.WriteCode(Code.Normal, $"; wave '{wavePair.Key}'");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.FrameDelay}");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.Count}");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.l\t\tEnemies+{enemy.Offset}");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.l\t\tPaths+{path.Offset}");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.Period}");
+                _writer.WriteCode(Code.Data, $"; wave '{wavePair.Key}'");
+                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.FrameDelay}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Count}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\tEnemies+{enemy.Offset}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\tPaths+{path.Offset}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Period}");
 
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.StartX},{wave.StartY}");
-                _writer.WriteCode(Code.Normal, $"\t\tdc.w\t\t{wave.StartXOffset},{wave.StartYOffset}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.StartX},{wave.StartY}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.StartXOffset},{wave.StartYOffset}");
             }
 
-            _writer.WriteCode(Code.Normal, "; final wave has a special WaveDelay of $ffff to mark the end");
-            _writer.WriteCode(Code.Normal, "\t\tdc.w\t\t$ffff\t\t");
+            _writer.WriteCode(Code.Data, "; final wave has a special WaveDelay of $ffff to mark the end");
+            _writer.WriteCode(Code.Data, "\t\tdc.w\t\t$ffff\t\t");
         }
 
         private PathInfo GetPathFor(string pathName, string sourceName)
@@ -371,7 +373,7 @@ namespace ScrollerMapper.Converters
             _writer.WriteCode(Code.Normal,
                 $"MAP_XSHIFT\t\tequ\t\t{xShift}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
 
-            _writer.WriteCode(Code.Normal,
+            _writer.WriteCode(Code.Data,
                 "\n\nMapXLookup: ; given X>>FXP_SHIFT returns x coordinate for the point in the map");
 
             var shiftedLevelWidth = _definition.Level.Width >> xShift;
@@ -397,7 +399,7 @@ namespace ScrollerMapper.Converters
             }
 
 
-            _writer.WriteCode(Code.Normal, lookup.ToString());
+            _writer.WriteCode(Code.Data, lookup.ToString());
         }
 
         private void WriteMainLookup()
@@ -422,18 +424,17 @@ namespace ScrollerMapper.Converters
                 lookup.Append($"{offset}");
             }
 
-            _writer.WriteCode(Code.Normal, lookup.ToString());
+            _writer.WriteCode(Code.Data, lookup.ToString());
         }
 
         private void WriteBobList()
         {
-            _writer.WriteCode(Code.Normal, "\tsection\tdata");
             _writer.WriteCode(Code.Normal, $"\nBOB_COUNT\t\tequ\t{_bobs.Count}");
-            _writer.WriteCode(Code.Normal, "\n\n** Pointers to all loaded Bobs\n");
-            _writer.WriteCode(Code.Normal, "BobPtrs:");
+            _writer.WriteCode(Code.Data, "\n\n** Pointers to all loaded Bobs\n");
+            _writer.WriteCode(Code.Data, "BobPtrs:");
             foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
             {
-                _writer.WriteCode(Code.Normal, $"\tdc.l\t{bob.Value.Name}Bob");
+                _writer.WriteCode(Code.Data, $"\tdc.l\t{bob.Value.Name}Bob");
             }
         }
     }
