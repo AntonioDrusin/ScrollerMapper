@@ -156,6 +156,7 @@ namespace ScrollerMapper.Processors
         private void WriteEnemies(LevelDefinition definition)
         {
             WriteEnemyComments();
+            _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, "Enemies:");
             _enemies = new Dictionary<string, EnemyInfo>();
 
@@ -205,6 +206,7 @@ namespace ScrollerMapper.Processors
             var firstTransformer = new SmoothInputPathTransformer();
             var secondTransformer = new OutputPathCoalesceTransformer();
 
+            _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, $"Paths:");
             var offset = 0;
             var index = 0;
@@ -248,6 +250,7 @@ namespace ScrollerMapper.Processors
             WriteWaveComments();
             _writer.WriteCode(Code.Normal, $"MaxActiveWaves\t\tequ\t{definition.MaxActiveWaves}");
             _writer.WriteCode(Code.Normal, $"MaxActiveEnemies\t\tequ\t{definition.MaxActiveEnemies}");
+            _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, "Waves:");
             foreach (var wavePair in definition.Waves)
             {
@@ -373,6 +376,7 @@ namespace ScrollerMapper.Processors
             _writer.WriteCode(Code.Normal,
                 $"MAP_XSHIFT\t\tequ\t\t{xShift}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
 
+            _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data,
                 "\n\nMapXLookup: ; given X>>FXP_SHIFT returns x coordinate for the point in the map");
 
@@ -398,7 +402,7 @@ namespace ScrollerMapper.Processors
                 lookup.Append($"{offset}");
             }
 
-
+            _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, lookup.ToString());
         }
 
@@ -423,7 +427,7 @@ namespace ScrollerMapper.Processors
                 lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
                 lookup.Append($"{offset}");
             }
-
+            _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, lookup.ToString());
         }
 
@@ -431,6 +435,7 @@ namespace ScrollerMapper.Processors
         {
             _writer.WriteCode(Code.Normal, $"\nBOB_COUNT\t\tequ\t{_bobs.Count}");
             _writer.WriteCode(Code.Data, "\n\n** Pointers to all loaded Bobs\n");
+            _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, "BobPtrs:");
             foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
             {

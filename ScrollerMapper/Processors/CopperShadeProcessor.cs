@@ -24,7 +24,7 @@ namespace ScrollerMapper.Processors
             {
                 _levelTransformer.SetLevel(definition);
 
-                _writer.WriteCode(Code.Data, "\tdata\n\n");
+                _writer.WriteCode(Code.Data, "\tsection\tdata\n\n");
                 _writer.WriteCode(Code.Normal, "; Enable conditional code for coppershade");
                 _writer.WriteCode(Code.Normal, "COPPERSHADE=\t\t1\n");
                 _writer.WriteCode(Code.Normal, $"CS_FLICKER=\t\t{(_definition.Background.CopperShade.Flicker?1:0)}\n");
