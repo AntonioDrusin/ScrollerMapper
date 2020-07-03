@@ -72,7 +72,8 @@ namespace ScrollerMapper.Processors
 
                 if (_definition.Player != null)
                 {
-                    _writer.WriteCode(Code.Normal, $"PLAYER_FRAMEDELAY\t\tequ\t{(uint)_definition.Player.MainSprite.Duration/20}");
+                    _writer.WriteCode(Code.Normal,
+                        $"PLAYER_FRAMEDELAY\t\tequ\t{(uint) _definition.Player.MainSprite.Duration / 20}");
                     _spriteRenderer.Render("player", _definition.Player.MainSprite);
                     if (_definition.Player.Shots == null)
                         throw new ConversionException("Must define 'shots' for 'player'");
@@ -142,7 +143,8 @@ namespace ScrollerMapper.Processors
 
         private void ConvertBob(string name, BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
         {
-            _bobConverter.ConvertBob(name, bob, definition.BobPlaneCount, bobPalette.Palette, _definition.BobPaletteFlip0AndLast);
+            _bobConverter.ConvertBob(name, bob, definition.BobPlaneCount, bobPalette.Palette,
+                _definition.BobPaletteFlip0AndLast);
             _bobs.Add(name, new BobInfo {Index = _bobIndex++, Name = name});
         }
 
@@ -178,10 +180,15 @@ namespace ScrollerMapper.Processors
 
                 _writer.WriteCode(Code.Data, $"\tdc.l\t{bobForEnemy.Name}Bob");
                 _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.FrameDelay}\t\t;Cel period");
-                _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.Points}\t\t;Points");
+
+                var pointString = enemy.Points.ToString("D8");
+                var pointsCoded = String.Join(",",
+                    Enumerable.Range(0, 4).Select(i => $"${pointString.Substring(i * 2, 2)}"));
+
+                _writer.WriteCode(Code.Data, $"\tdc.b\t{pointsCoded}\t\t;Points");
                 _enemies.Add(enemyKeyValue.Key,
                     new EnemyInfo {Name = enemyKeyValue.Key, Index = index++, Offset = offset});
-                offset += 8;
+                offset += 10;
             }
 
             _writer.WriteCode(Code.Data, "\n");
@@ -195,7 +202,7 @@ namespace ScrollerMapper.Processors
     structure   EnemyStructure, 0
     long        EnemyBobPtr_l
     word        EnemyPeriod_w       ; Period in frames between switching bobs
-    word        EnemyPoints_w
+    long        EnemyPoints_l       ; BCD coded points for this enemy
     label       ENEMY_STRUCT_SIZE
 ");
         }
@@ -366,8 +373,9 @@ namespace ScrollerMapper.Processors
             var palette = new PaletteTransformer("bob", bitmapPalette, _definition.BobPlaneCount.PowerOfTwo());
             if (_definition.BobPaletteFlip0AndLast)
             {
-                palette.Flip(0, palette.Length-1);
+                palette.Flip(0, palette.Length - 1);
             }
+
             _paletteRenderer.Render(palette);
         }
 
@@ -428,6 +436,7 @@ namespace ScrollerMapper.Processors
                 lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
                 lookup.Append($"{offset}");
             }
+
             _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, lookup.ToString());
         }
