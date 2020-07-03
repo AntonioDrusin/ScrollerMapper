@@ -72,6 +72,7 @@ namespace ScrollerMapper.Processors
 
                 if (_definition.Player != null)
                 {
+                    _writer.WriteCode(Code.Normal, $"PLAYER_FRAMEDELAY\t\tequ\t{(uint)_definition.Player.MainSprite.Duration/20}");
                     _spriteRenderer.Render("player", _definition.Player.MainSprite);
                     if (_definition.Player.Shots == null)
                         throw new ConversionException("Must define 'shots' for 'player'");

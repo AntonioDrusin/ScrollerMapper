@@ -94,6 +94,17 @@ namespace ScrollerMapper.DefinitionModels
         public string File { get; set; }
         public string Palette { get; set; }
         public string SpriteNumber { get; set; }
+        public int StartX { get; set; } = 0;
+        public int StartY { get; set; } = 0;
+        public int Count { get; set; } = 1;
+        public int Height { get; set; } = 16;
+        public int Duration { get; set; } = 500; // In milliseconds
+    }
+
+    internal enum SpriteMode
+    {
+        FiveByFive=1,
+        Linear
     }
 
     internal class PanelDefinition

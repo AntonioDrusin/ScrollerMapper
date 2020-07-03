@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
+using System.IO;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
 
@@ -14,7 +14,10 @@ namespace ScrollerMapper.BitplaneRenderers
         private readonly IWriter _writer;
         private readonly Options _options;
         private readonly IBitmapTransformer _transformer;
-        private static bool once = false;
+        private static bool _once = false;
+        private int _offset;
+        private List<byte[]> _converted;
+        private SpriteDefinition _definition;
 
         public SpriteRenderer(IWriter writer, Options options, IBitmapTransformer transformer)
         {
@@ -25,50 +28,97 @@ namespace ScrollerMapper.BitplaneRenderers
 
         public void Render(string name, SpriteDefinition definition)
         {
-            var result = Aseprite.ConvertAnimation(definition.File, _options.OutputFolder);
+            _definition = definition;
+
+            if (string.Compare(Path.GetExtension(definition.File), ".aseprite", StringComparison.InvariantCultureIgnoreCase) == 0)
+            {
+                ConvertAseprite(name);
+            }
+            else
+            {
+                ConvertSprite(name);
+            }
+
+        }
+
+        private void ConvertAseprite(string name)
+        {
+            var result = Aseprite.ConvertAnimation(_definition.File, _options.OutputFolder);
             var aseprite = result.JsonFile.ReadJsonFile<AsepriteDefinition>();
-            var palette = definition.Palette.FromInputFolder().LoadIndexedBitmap();
+            var palette = _definition.Palette.FromInputFolder().LoadIndexedBitmap();
             var bitmap = result.BitmapFile.LoadBitmap();
+            
+            StartSpriteList(name, aseprite.Frames.Count);
 
-            _writer.StartObject(ObjectType.Sprite, name);
-
-            WriteSpriteCommentsOnce();
-
-
-            _writer.WriteWord((ushort) aseprite.Frames.Count);
-            var offset = 2 + aseprite.Frames.Count * 8; // 4 words each frame for the "header"
-
-            var converted = new List<byte[]>();
             foreach (var frame in aseprite.Frames)
             {
                 if (frame.Frame.W != 16)
                 {
-                    throw new ConversionException($"Sprite {name} in {definition.File} frames must be 16xx");
+                    throw new ConversionException($"Sprite {name} in {_definition.File} frames must be 16xx");
                 }
 
                 var celBitmap = bitmap.Clone(new Rectangle(frame.Frame.X, frame.Frame.Y, frame.Frame.W, frame.Frame.H),
                     bitmap.PixelFormat);
 
-                if (string.Compare(definition.SpriteNumber, "attached", StringComparison.CurrentCultureIgnoreCase) != 0)
+                if (string.Compare(_definition.SpriteNumber, "attached", StringComparison.CurrentCultureIgnoreCase) != 0)
                 {
-                    celBitmap = MapColors(definition, palette, celBitmap);
+                    celBitmap = MapColors(_definition, palette, celBitmap);
                 }
 
                 _transformer.SetBitmap(celBitmap);
                 var sprite = TrimmedSprite.TrimSprite(_transformer.GetInterleaved(PlaneCount));
-                            
 
-                converted.Add(sprite.Sprite);
-
-                _writer.WriteWord((ushort) offset);
-                _writer.WriteWord((ushort) (frame.Duration / 20)); // 20ms frames = 1/50th of a second.
-                _writer.WriteWord((ushort)sprite.OffsetX); 
-                _writer.WriteWord((ushort)sprite.Height);
-
-                offset += sprite.Sprite.Length + 8; // Add Control words and termination words as well, 
+                AddSprite(sprite, frame.Duration);
             }
 
-            foreach (var sprite in converted)
+            CompleteSpriteList();
+        }
+
+        private void ConvertSprite(string name)
+        {
+
+            var palette = _definition.Palette.FromInputFolder().LoadIndexedBitmap();
+            var bitmap = _definition.File.FromInputFolder().LoadBitmap();
+
+            StartSpriteList(name, _definition.Count);
+            
+            var spriteX = _definition.StartX;
+            var spriteY = _definition.StartY;
+            var numTiles = _definition.Count;
+            var width = 16;
+            var height = _definition.Height;
+            var maxX = bitmap.Width / width;
+            var maxY = bitmap.Height / height;
+
+            int i = 0;
+            while (i<numTiles)
+            {
+                var bobBitmap = bitmap.Clone(new Rectangle(spriteX * width, spriteY * height, width, height), bitmap.PixelFormat);
+                bobBitmap = MapColors(_definition, palette, bobBitmap);
+
+                _transformer.SetBitmap(bobBitmap);
+                var sprite = TrimmedSprite.TrimSprite(_transformer.GetInterleaved(PlaneCount));
+
+                if (sprite.Height > 0)
+                {
+                    AddSprite(sprite, _definition.Duration);
+                    i++;
+                }
+                
+                spriteX++;
+                if (spriteX >= maxX)
+                {
+                    spriteY++;
+                    if (spriteY >= maxY) throw new ConversionException($"Converting {_definition.File} reached the end of the image trying to get {numTiles} tiles.");
+                    spriteX = 0;
+                }
+            }
+            CompleteSpriteList();
+        }
+
+        private void CompleteSpriteList()
+        {
+            foreach (var sprite in _converted)
             {
                 _writer.WriteWord(0);
                 _writer.WriteWord(0);
@@ -80,10 +130,30 @@ namespace ScrollerMapper.BitplaneRenderers
             _writer.EndObject();
         }
 
+        private void AddSprite(TrimmedSprite sprite, int duration)
+        {
+            _converted.Add(sprite.Sprite);
+            _writer.WriteWord((ushort) _offset);
+            _writer.WriteWord((ushort) (duration / 20)); // 20ms frames = 1/50th of a second.
+            _writer.WriteWord((ushort) sprite.OffsetX);
+            _writer.WriteWord((ushort) sprite.Height);
+
+            _offset += sprite.Sprite.Length + 8; // Add Control words and termination words as well, 
+        }
+
+        private void StartSpriteList(string name, int count)
+        {
+            _converted = new List<byte[]>();
+            _writer.StartObject(ObjectType.Sprite, name);
+            WriteSpriteCommentsOnce();
+            _writer.WriteWord((ushort) count);
+            _offset = 2 + count * 8; // 4 words each frame for the "header"
+        }
+
         private void WriteSpriteCommentsOnce()
         {
-            if (once) return;
-            once = true;
+            if (_once) return;
+            _once = true;
 
             _writer.WriteCode(Code.Normal, @"
 ;---- SPRITES STRUCTURES ----
@@ -130,7 +200,7 @@ namespace ScrollerMapper.BitplaneRenderers
         public static TrimmedSprite TrimSprite(byte[] sprite)
         {
             int firstLine = 0;
-            int lastLine = 0;
+            int lastLine = -1;
             bool first = true;
             for (int i = 0; i < sprite.Length; i += 4)
             {
@@ -155,7 +225,7 @@ namespace ScrollerMapper.BitplaneRenderers
             return new TrimmedSprite
             {
                 OffsetX = 0,
-                Height = sprite.Length/4,
+                Height = height == 0 ? 0 : sprite.Length/4,
                 Sprite = sprite
             };
 
