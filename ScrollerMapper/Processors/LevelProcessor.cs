@@ -90,6 +90,20 @@ namespace ScrollerMapper.Processors
                     _writer.WriteCode(Code.Normal, $"PLAYER_VX\t\tequ\t{playerVx}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_VY\t\tequ\t{playerVy}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_VD\t\tequ\t{(int) playerVxy}");
+
+                    _writer.WriteCode(Code.Normal, $"PLAYER_RAYDURATION\t\tequ\t{_definition.Player.Death.RayDuration}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNDELAY\t\tequ\t{_definition.Player.Death.SpawnDelay}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNX\t\tequ\t{_definition.Player.Death.Spawn.X}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNY\t\tequ\t{_definition.Player.Death.Spawn.Y}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNCELH\t\tequ\t{_definition.Player.Death.SpawnCelH}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNCELV\t\tequ\t{_definition.Player.Death.SpawnCelV}");
+                    _writer.WriteCode(Code.Normal, $"PLAYER_INVULNDURATION\t\tequ\t{_definition.Player.Death.InvulnerabilityDuration}");
+
+                    _writer.WriteCode(Code.Data, "\tsection\tdata");
+                    _writer.WriteCode(Code.Data, "PlayerDeathPath:");
+                    WritePathData(_definition.Player.Death.Path);
+                    _writer.WriteCode(Code.Data, "\n\n");
+
                 }
             }
             else if (_definition.Player != null)
@@ -211,8 +225,6 @@ namespace ScrollerMapper.Processors
         {
             _paths = new Dictionary<string, PathInfo>();
             WritePathComments();
-            var firstTransformer = new SmoothInputPathTransformer();
-            var secondTransformer = new OutputPathCoalesceTransformer();
 
             _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, $"Paths:");
@@ -220,21 +232,30 @@ namespace ScrollerMapper.Processors
             var index = 0;
             foreach (var path in definitionPaths)
             {
-                var finalPath = firstTransformer.TransformPath(path.Value.Steps);
-                finalPath = secondTransformer.GroupPath(finalPath);
-
                 _paths.Add(path.Key, new PathInfo {Name = path.Key, Offset = offset, Index = index++});
                 _writer.WriteCode(Code.Data, $"; path '{path.Key}', offset {offset}");
-                foreach (var step in finalPath)
-                {
-                    _writer.WriteCode(Code.Data,
-                        $"\t\tdc.w\t\t{step.FrameCount},{step.VelocityX},{step.VelocityY}");
-                    offset += 6;
-                }
+                offset += WritePathData(path.Value);
+            }
+        }
 
-                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t0, 0, 0");
+        private int WritePathData(PathDefinition path)
+        {
+            var offset = 0;
+            var firstTransformer = new SmoothInputPathTransformer();
+            var secondTransformer = new OutputPathCoalesceTransformer();
+            var finalPath = firstTransformer.TransformPath(path.Steps);
+            finalPath = secondTransformer.GroupPath(finalPath);
+
+            foreach (var step in finalPath)
+            {
+                _writer.WriteCode(Code.Data,
+                    $"\t\tdc.w\t\t{step.FrameCount},{step.VelocityX},{step.VelocityY}");
                 offset += 6;
             }
+            _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t0, 0, 0");
+            offset += 6;
+
+            return offset;
         }
 
         private void WritePathComments()

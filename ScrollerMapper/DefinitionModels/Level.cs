@@ -73,34 +73,7 @@ namespace ScrollerMapper.DefinitionModels
         public int Width { get; set; } = 1024;
     }
 
-    internal class PlayerDefinition
-    {
-        public SpriteDefinition MainSprite { get; set; }
-        public ShotsDefinition Shots { get; set; }
-        public int? Vx { get; set; }
-        public int? Vy { get; set; }
-    }
-
-    internal class ShotsDefinition
-    {
-        public int Vx { get; set; }
-        public int MaxCount { get; set; }
-        public int Cooldown { get; set; }
-        public BobDefinition Bob { get; set; }
-    }
-
-    internal class SpriteDefinition
-    {
-        public string File { get; set; }
-        public string Palette { get; set; }
-        public string SpriteNumber { get; set; }
-        public int StartX { get; set; } = 0;
-        public int StartY { get; set; } = 0;
-        public int Count { get; set; } = 1;
-        public int Height { get; set; } = 16;
-        public int Duration { get; set; } = 500; // In milliseconds
-    }
-
+   
     internal enum SpriteMode
     {
         FiveByFive=1,
@@ -169,8 +142,8 @@ namespace ScrollerMapper.DefinitionModels
 
     internal class PathDefinition
     {
-        public string Mode { get; set; }
-        public List<PathStepDefinition> Steps { get; set; }
+        public string Mode { get; set; } = "v";
+        public List<PathStepDefinition> Steps { get; set; } = new List<PathStepDefinition>();
     }
 
     internal class PathStepDefinition

@@ -66,6 +66,7 @@
     <Compile Include="Converters\Infos\OutputPathStepInfo.cs" />
     <Compile Include="DefinitionModels\Level.cs" />
     <Compile Include="BitplaneRenderers\BinaryFontRenderer.cs" />
+    <Compile Include="DefinitionModels\PlayerDefinition.cs" />
     <Compile Include="Transformers\LevelTransformer.cs" />
     <Compile Include="Processors\CopperShadeProcessor.cs" />
     <Compile Include="Processors\IProcessor.cs" />
