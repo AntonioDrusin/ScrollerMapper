@@ -3,6 +3,7 @@
     internal class PlayerDefinition
     {
         public SpriteDefinition MainSprite { get; set; }
+        public SpriteDefinition GrazingSprite { get; set; }
         public ShotsDefinition Shots { get; set; }
         public DeathDefinition Death { get; set; } = new DeathDefinition();
         public int? Vx { get; set; }
