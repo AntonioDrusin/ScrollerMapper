@@ -1,13 +1,15 @@
-﻿namespace ScrollerMapper.DefinitionModels
+﻿using System.Collections.Generic;
+
+namespace ScrollerMapper.DefinitionModels
 {
     internal class PlayerDefinition
     {
         public SpriteDefinition MainSprite { get; set; }
         public SpriteDefinition GrazingSprite { get; set; }
-        public ShotsDefinition Shots { get; set; }
+        public List<ShotsDefinition> Shots { get; set; } = new List<ShotsDefinition>();
         public DeathDefinition Death { get; set; } = new DeathDefinition();
-        public int? Vx { get; set; }
-        public int? Vy { get; set; }
+        public int Vx { get; set; } = 32;
+        public int Vy { get; set; } = 32;
     }
 
     internal class ShotsDefinition
@@ -15,6 +17,7 @@
         public int Vx { get; set; }
         public int MaxCount { get; set; }
         public int Cooldown { get; set; }
+        public int Hit { get; set; } = 1;
         public BobDefinition Bob { get; set; }
     }
 

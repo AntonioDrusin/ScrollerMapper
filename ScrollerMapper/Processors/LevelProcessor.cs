@@ -78,34 +78,59 @@ namespace ScrollerMapper.Processors
                     _spriteRenderer.Render("grazing", _definition.Player.GrazingSprite);
 
                     if (_definition.Player.Shots == null)
+                    {
                         throw new ConversionException("Must define 'shots' for 'player'");
-                    if (_definition.Player.Shots.Bob == null)
-                        throw new ConversionException("Must define 'main' for 'player.shots'");
+                    }
 
-                    ConvertBob("shot", _definition.Player.Shots.Bob, _definition, bobPalette);
-                    _writer.WriteCode(Code.Normal, $"BULLET_VX\t\tequ\t{(int) (_definition.Player.Shots.Vx)}");
-                    _writer.WriteCode(Code.Normal, $"BULLET_COOLDOWN\t\tequ\t{_definition.Player.Shots.Cooldown}");
-                    _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{_definition.Player.Shots.MaxCount}");
-                    var playerVx = (int) (_definition.Player.Vx.GetValueOrDefault(32));
-                    var playerVy = (int) (_definition.Player.Vy.GetValueOrDefault(32));
+                    if (_definition.Player.Shots.Count != 2)
+                    {
+                        throw new ConversionException("Must define exactly 2 'shots' for 'player'");
+                    }
+
+                    WriteShotStructure();
+                    int i = 0;
+                    foreach (var shot in _definition.Player.Shots)
+                    {
+                        if (shot.Bob == null)
+                            throw new ConversionException("Must define 'bob' for each of the 'player.shots'");
+                        ConvertBob($"shot{i}", shot.Bob, _definition, bobPalette);
+                        i++;
+                    }
+                    int maxCount = 0;
+                    i = 0;
+                    _writer.WriteCode(Code.Data, "\tsection data");
+                    _writer.WriteCode(Code.Data, "shots:");
+                    foreach (var shot in _definition.Player.Shots)
+                    {
+                        _writer.WriteCode(Code.Data, $"shot{i}:");
+                        _writer.WriteCode(Code.Data, $"\tdc.l\tshot{i}Bob");
+                        _writer.WriteCode(Code.Data, $"\tdc.w\t{shot.Vx}, {shot.Hit}, {shot.MaxCount}, {shot.Cooldown}\t;vx,hit,maxCount,cooldDown");
+                        if (shot.MaxCount > maxCount) maxCount = shot.MaxCount;
+                        i++;
+                    }
+                    _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{maxCount}");
+
+                    var playerVx = _definition.Player.Vx;
+                    var playerVy = _definition.Player.Vy;
                     var playerVxy = Math.Sin(Math.PI / 4) * (playerVx + playerVy) / 2;
                     _writer.WriteCode(Code.Normal, $"PLAYER_VX\t\tequ\t{playerVx}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_VY\t\tequ\t{playerVy}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_VD\t\tequ\t{(int) playerVxy}");
 
-                    _writer.WriteCode(Code.Normal, $"PLAYER_RAYDURATION\t\tequ\t{_definition.Player.Death.RayDuration}");
+                    _writer.WriteCode(Code.Normal,
+                        $"PLAYER_RAYDURATION\t\tequ\t{_definition.Player.Death.RayDuration}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNDELAY\t\tequ\t{_definition.Player.Death.SpawnDelay}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNX\t\tequ\t{_definition.Player.Death.Spawn.X}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNY\t\tequ\t{_definition.Player.Death.Spawn.Y}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNCELH\t\tequ\t{_definition.Player.Death.SpawnCelH}");
                     _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNCELV\t\tequ\t{_definition.Player.Death.SpawnCelV}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_INVULNDURATION\t\tequ\t{_definition.Player.Death.InvulnerabilityDuration}");
+                    _writer.WriteCode(Code.Normal,
+                        $"PLAYER_INVULNDURATION\t\tequ\t{_definition.Player.Death.InvulnerabilityDuration}");
 
                     _writer.WriteCode(Code.Data, "\tsection\tdata");
                     _writer.WriteCode(Code.Data, "PlayerDeathPath:");
                     WritePathData(_definition.Player.Death.Path);
                     _writer.WriteCode(Code.Data, "\n\n");
-
                 }
             }
             else if (_definition.Player != null)
@@ -157,6 +182,21 @@ namespace ScrollerMapper.Processors
             WriteBobList();
         }
 
+        private void WriteShotStructure()
+        {
+            _writer.WriteCode(Code.Normal, @"
+;---- SHOTS STRUCTURE ----
+    structure   ShotStructure, 0
+    long        ShotBobPtr_l
+    word        ShotVX_w
+    word        ShotHit_w
+    word        ShotMax_w
+    word        ShotCooldown_w
+    label       SHOT_STRUCT_SIZE
+");
+            
+        }
+
         private void ConvertBob(string name, BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
         {
             _bobConverter.ConvertBob(name, bob, definition.BobPlaneCount, bobPalette.Palette,
@@ -196,6 +236,7 @@ namespace ScrollerMapper.Processors
 
                 _writer.WriteCode(Code.Data, $"\tdc.l\t{bobForEnemy.Name}Bob");
                 _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.FrameDelay}\t\t;Cel period");
+                _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.Hp}\t\t;Hit points");
 
                 var pointString = enemy.Points.ToString("D8");
                 var pointsCoded = String.Join(",",
@@ -204,7 +245,7 @@ namespace ScrollerMapper.Processors
                 _writer.WriteCode(Code.Data, $"\tdc.b\t{pointsCoded}\t\t;Points");
                 _enemies.Add(enemyKeyValue.Key,
                     new EnemyInfo {Name = enemyKeyValue.Key, Index = index++, Offset = offset});
-                offset += 10;
+                offset += 12;
             }
 
             _writer.WriteCode(Code.Data, "\n");
@@ -218,6 +259,7 @@ namespace ScrollerMapper.Processors
     structure   EnemyStructure, 0
     long        EnemyBobPtr_l
     word        EnemyPeriod_w       ; Period in frames between switching bobs
+    word        EnemyHp_w       ; HP for this enemy
     long        EnemyPoints_l       ; BCD coded points for this enemy
     label       ENEMY_STRUCT_SIZE
 ");
@@ -254,6 +296,7 @@ namespace ScrollerMapper.Processors
                     $"\t\tdc.w\t\t{step.FrameCount},{step.VelocityX},{step.VelocityY}");
                 offset += 6;
             }
+
             _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t0, 0, 0");
             offset += 6;
 
