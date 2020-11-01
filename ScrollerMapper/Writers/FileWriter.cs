@@ -53,11 +53,13 @@ namespace ScrollerMapper
                 case ObjectType.TileInfo:
                 case ObjectType.Layer:
                 case ObjectType.Assembly:
+                case ObjectType.Data:
                     break;
                 case ObjectType.Bitmap:
                 case ObjectType.Tile:
                 case ObjectType.Bob:
                 case ObjectType.Sprite:
+                case ObjectType.Audio:
                     isChip = true;
                     break;
                 default:
@@ -90,6 +92,11 @@ namespace ScrollerMapper
             _currentWriter.Write(data);
         }
 
+        public long GetCurrentOffset()
+        {
+            return _currentWriter.BaseStream.Position;
+        }
+
         public void WriteWord(ushort data)
         {
             _currentWriter.Write(Endian.ConvertWord(data));
@@ -104,6 +111,12 @@ namespace ScrollerMapper
         {
             _currentWriter.Write(data);
         }
+
+        public void WriteBlob(byte[] data, int count)
+        {
+            _currentWriter.Write(data, 0, count);
+        }
+
 
         public void WriteCode(Code codeType, string code)
         {
@@ -166,6 +179,12 @@ namespace ScrollerMapper
                     break;
                 case ObjectType.Sprite:
                     extension = "SPRITE";
+                    break;
+                case ObjectType.Audio:
+                    extension = "AUD";
+                    break;
+                case ObjectType.Data:
+                    extension = "DAT";
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);

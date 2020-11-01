@@ -18,6 +18,7 @@ namespace ScrollerMapper.DefinitionModels
         public int MaxCount { get; set; }
         public int Cooldown { get; set; }
         public int Hit { get; set; } = 1;
+        public string Sound { get; set; }
         public BobDefinition Bob { get; set; }
     }
 

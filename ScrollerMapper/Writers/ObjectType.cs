@@ -9,6 +9,8 @@
         Tile,
         Assembly,
         Bob,
-        Sprite
+        Sprite, 
+        Audio,
+        Data,
     }
 }

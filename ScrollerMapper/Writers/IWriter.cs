@@ -14,6 +14,8 @@
         void WriteWord(ushort data);
         void WriteLong(uint data);
         void WriteBlob(byte[] data);
+        void WriteBlob(byte[] data, int count);
         void WriteCode(Code codeType, string code);
+        long GetCurrentOffset();
     }
 }

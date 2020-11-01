@@ -39,9 +39,18 @@ namespace ScrollerMapperTests.Services
             _stream.Write(data, 0, data.Length);
         }
 
+        public void WriteBlob(byte[] data, int count)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public void WriteCode(Code codeType, string code)
         {
         }
 
+        public long GetCurrentOffset()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

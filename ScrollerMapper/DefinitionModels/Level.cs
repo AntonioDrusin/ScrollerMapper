@@ -23,7 +23,8 @@ namespace ScrollerMapper.DefinitionModels
         public int MainVerticalBorder { get; set; } = 32;
         public int MainHorizontalBorder { get; set; } = 32;
 
-
+        public SfxDefinition Sfx { get; set; }
+        
         [DefaultValue(4)] public int FixedPointBits { get; set; } = 4;
 
         public LevelDetailsDefinition Level { get; set; }
@@ -72,14 +73,7 @@ namespace ScrollerMapper.DefinitionModels
     {
         public int Width { get; set; } = 1024;
     }
-
    
-    internal enum SpriteMode
-    {
-        FiveByFive=1,
-        Linear
-    }
-
     internal class PanelDefinition
     {
         public ImageDefinition Font { get; set; }
@@ -155,5 +149,23 @@ namespace ScrollerMapper.DefinitionModels
         public int F { get; set; }
         public int In { get; set; }
         public int Out { get; set; }
+    }
+
+    internal class SfxDefinition
+    {
+        public Dictionary<string, WaveformDefinition> Waveforms { get; set; } = new Dictionary<string, WaveformDefinition>();
+        public Dictionary<string, SoundDefinition> Sounds { get; set; } = new Dictionary<string, SoundDefinition>();
+    }
+
+    internal class WaveformDefinition
+    {
+        public string SoundFile { get; set; }
+    }
+
+    internal class SoundDefinition
+    {
+        public string Waveform { get; set; }
+        public int Frequency { get; set; } = 8000;
+        public int Volume { get; set; } = 64;
     }
 }

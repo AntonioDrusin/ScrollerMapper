@@ -9,6 +9,7 @@ using ScrollerMapper.Converters;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.PaletteRenderers;
+using ScrollerMapper.SfxRenderers;
 using ScrollerMapper.Transformers;
 using ImageConverter = ScrollerMapper.Converters.ImageConverter;
 
@@ -25,6 +26,7 @@ namespace ScrollerMapper.Processors
         private readonly BobConverter _bobConverter;
         private readonly IPaletteRenderer _paletteRenderer;
         private readonly SpriteRenderer _spriteRenderer;
+        private readonly SfxRenderer _sfxRenderer;
         private readonly IWriter _writer;
         private readonly Dictionary<string, BobInfo> _bobs;
         private int _bobIndex;
@@ -40,6 +42,7 @@ namespace ScrollerMapper.Processors
             BobConverter bobConverter,
             IPaletteRenderer paletteRenderer,
             SpriteRenderer spriteRenderer,
+            SfxRenderer sfxRenderer,
             IWriter writer)
         {
             _options = options;
@@ -48,6 +51,7 @@ namespace ScrollerMapper.Processors
             _bobConverter = bobConverter;
             _paletteRenderer = paletteRenderer;
             _spriteRenderer = spriteRenderer;
+            _sfxRenderer = sfxRenderer;
             _writer = writer;
             _bobs = new Dictionary<string, BobInfo>();
         }
@@ -59,6 +63,11 @@ namespace ScrollerMapper.Processors
             if (_definition.Tiles != null)
             {
                 ConvertTiles(_definition);
+            }
+
+            if (_definition.Sfx != null)
+            {
+                _sfxRenderer.Render(_definition.Sfx);
             }
 
             var bobPalette = _definition.BobPaletteFile.FromInputFolder().LoadIndexedBitmap();
@@ -105,6 +114,14 @@ namespace ScrollerMapper.Processors
                         _writer.WriteCode(Code.Data, $"shot{i}:");
                         _writer.WriteCode(Code.Data, $"\tdc.l\tshot{i}Bob");
                         _writer.WriteCode(Code.Data, $"\tdc.w\t{shot.Vx}, {shot.Hit}, {shot.MaxCount}, {shot.Cooldown}\t;vx,hit,maxCount,cooldDown");
+
+                        int soundOffset=0;
+                        if (!string.IsNullOrEmpty(shot.Sound))
+                        {
+                            soundOffset = _sfxRenderer.GetSoundLutOffset(shot.Sound);
+                        }
+
+                        _writer.WriteCode(Code.Data, $"\tdc.w\t{soundOffset}\t; sound Offset");
                         if (shot.MaxCount > maxCount) maxCount = shot.MaxCount;
                         i++;
                     }
@@ -192,6 +209,7 @@ namespace ScrollerMapper.Processors
     word        ShotHit_w
     word        ShotMax_w
     word        ShotCooldown_w
+    word        ShotSound_w             ; Offset in the sounds table
     label       SHOT_STRUCT_SIZE
 ");
             
