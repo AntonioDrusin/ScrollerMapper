@@ -41,6 +41,9 @@ namespace ScrollerMapper.SfxRenderers
             ");
 
             _writer.StartObject(ObjectType.Data, "sounds");
+
+            _writer.WriteWord(0); // So the first sound is not 0 which could mean no-sound
+
             foreach (var soundTuple in sfxDefinition.Sounds)
             {
                 var sound = soundTuple.Value;
@@ -101,7 +104,14 @@ namespace ScrollerMapper.SfxRenderers
 
         public int GetSoundLutOffset(string soundName)
         {
-            return _soundOffsets[soundName];
+            try
+            {
+                return _soundOffsets[soundName];
+            }
+            catch (KeyNotFoundException)
+            {
+                throw new KeyNotFoundException("Cannot find sound: " + soundName);
+            }
         }
     }
 }

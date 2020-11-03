@@ -119,6 +119,7 @@ namespace ScrollerMapper.DefinitionModels
         public int Points { get; set; }
         public int FrameDelay { get; set; }
         public int Hp { get; set; } = 2;
+        public string ExplosionSound { get; set; }
     }
 
     internal class WaveDefinition

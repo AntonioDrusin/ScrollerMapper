@@ -105,6 +105,7 @@ namespace ScrollerMapper.Processors
                         ConvertBob($"shot{i}", shot.Bob, _definition, bobPalette);
                         i++;
                     }
+
                     int maxCount = 0;
                     i = 0;
                     _writer.WriteCode(Code.Data, "\tsection data");
@@ -113,18 +114,16 @@ namespace ScrollerMapper.Processors
                     {
                         _writer.WriteCode(Code.Data, $"shot{i}:");
                         _writer.WriteCode(Code.Data, $"\tdc.l\tshot{i}Bob");
-                        _writer.WriteCode(Code.Data, $"\tdc.w\t{shot.Vx}, {shot.Hit}, {shot.MaxCount}, {shot.Cooldown}\t;vx,hit,maxCount,cooldDown");
+                        _writer.WriteCode(Code.Data,
+                            $"\tdc.w\t{shot.Vx}, {shot.Hit}, {shot.MaxCount}, {shot.Cooldown}\t;vx,hit,maxCount,cooldDown");
 
-                        int soundOffset=0;
-                        if (!string.IsNullOrEmpty(shot.Sound))
-                        {
-                            soundOffset = _sfxRenderer.GetSoundLutOffset(shot.Sound);
-                        }
-
+                        int soundOffset = _sfxRenderer.GetSoundLutOffset(shot.Sound);
+                        
                         _writer.WriteCode(Code.Data, $"\tdc.w\t{soundOffset}\t; sound Offset");
                         if (shot.MaxCount > maxCount) maxCount = shot.MaxCount;
                         i++;
                     }
+
                     _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{maxCount}");
 
                     var playerVx = _definition.Player.Vx;
@@ -212,7 +211,6 @@ namespace ScrollerMapper.Processors
     word        ShotSound_w             ; Offset in the sounds table
     label       SHOT_STRUCT_SIZE
 ");
-            
         }
 
         private void ConvertBob(string name, BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
@@ -260,10 +258,14 @@ namespace ScrollerMapper.Processors
                 var pointsCoded = String.Join(",",
                     Enumerable.Range(0, 4).Select(i => $"${pointString.Substring(i * 2, 2)}"));
 
+                var soundOffset = _sfxRenderer.GetSoundLutOffset(enemy.ExplosionSound);
+
                 _writer.WriteCode(Code.Data, $"\tdc.b\t{pointsCoded}\t\t;Points");
+                _writer.WriteCode(Code.Data, $"\tdc.w\t{soundOffset}\t\t;Sound offset");
+
                 _enemies.Add(enemyKeyValue.Key,
                     new EnemyInfo {Name = enemyKeyValue.Key, Index = index++, Offset = offset});
-                offset += 12;
+                offset += 14;
             }
 
             _writer.WriteCode(Code.Data, "\n");
@@ -279,6 +281,7 @@ namespace ScrollerMapper.Processors
     word        EnemyPeriod_w       ; Period in frames between switching bobs
     word        EnemyHp_w       ; HP for this enemy
     long        EnemyPoints_l       ; BCD coded points for this enemy
+    word        EnemySound_w
     label       ENEMY_STRUCT_SIZE
 ");
         }
