@@ -71,7 +71,7 @@ namespace ScrollerMapper.Transformers
 
             if (_missedColor)
             {
-                Console.WriteLine($"WARNING: Some colors could no be accurately mapped for {_fileName}");
+                Console.WriteLine($"WARNING: Some colors could not be accurately mapped for {_fileName}");
             }
 
             return converted;

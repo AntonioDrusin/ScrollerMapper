@@ -8,6 +8,8 @@
 
     internal interface IWriter
     {
+        void StartDiskFile(string diskFileName);
+        void CompleteDiskFile();
         void StartObject(ObjectType type, string name);
         void EndObject();
         void WriteByte(byte data);

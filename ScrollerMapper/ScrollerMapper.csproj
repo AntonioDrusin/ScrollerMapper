@@ -67,9 +67,14 @@
     <Compile Include="Converters\ImageConverter.cs" />
     <Compile Include="Converters\Infos\BobInfo.cs" />
     <Compile Include="Converters\Infos\OutputPathStepInfo.cs" />
-    <Compile Include="DefinitionModels\Level.cs" />
+    <Compile Include="Converters\MusicConverter.cs" />
+    <Compile Include="DefinitionModels\GameDefinition.cs" />
+    <Compile Include="DefinitionModels\LevelDefinition.cs" />
     <Compile Include="BitplaneRenderers\BinaryFontRenderer.cs" />
+    <Compile Include="DefinitionModels\MusicDefinition.cs" />
     <Compile Include="DefinitionModels\PlayerDefinition.cs" />
+    <Compile Include="Processors\GameProcessor.cs" />
+    <Compile Include="Processors\RunLengthEncoder.cs" />
     <Compile Include="SfxRenderers\SfxRenderer.cs" />
     <Compile Include="Transformers\LevelTransformer.cs" />
     <Compile Include="Processors\CopperShadeProcessor.cs" />

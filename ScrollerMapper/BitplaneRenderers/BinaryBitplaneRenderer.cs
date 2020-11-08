@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
+using ScrollerMapper.Processors;
 using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper.ImageRenderers
@@ -16,7 +19,7 @@ namespace ScrollerMapper.ImageRenderers
             _transformer = transformer;
         }
 
-        public void Render(string name, Bitmap bitmap, int planeCount)
+        public void Render(string name, Bitmap bitmap, int planeCount, bool disk)
         {
             if (bitmap.PixelFormat != PixelFormat.Format8bppIndexed)
             {
@@ -25,8 +28,7 @@ namespace ScrollerMapper.ImageRenderers
 
             _transformer.SetBitmap(bitmap);
 
-
-            _writer.StartObject(ObjectType.Bitmap, name);
+            _writer.StartObject(disk ? ObjectType.DiskChip: ObjectType.Bitmap, name);
 
 
             var byteWidth = _transformer.GetByteWidth();
@@ -36,11 +38,16 @@ namespace ScrollerMapper.ImageRenderers
             _writer.WriteCode(Code.Normal, $"{name}_BWIDTH\t\tequ\t{byteWidth}");
             _writer.WriteCode(Code.Normal, $"{name}_HEIGHT\t\tequ\t{height}");
 
-            var planes = _transformer.GetBitplanes(planeCount);
             var interleaved = _transformer.GetInterleaved(planeCount);
+
+            RunLengthEncoder.ProjectCompression(interleaved);
 
             _writer.WriteBlob(interleaved);
             _writer.EndObject();
         }
+
+     
+
+    
     }
 }

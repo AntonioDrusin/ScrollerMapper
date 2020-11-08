@@ -6,6 +6,4 @@ namespace ScrollerMapper.Processors
     {
         void Process(LevelDefinition definition);
     }
-
-
 }

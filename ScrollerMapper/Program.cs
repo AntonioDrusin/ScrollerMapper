@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
 using CommandLine;
-using ScrollerMapper.Converters;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Processors;
 
@@ -57,6 +55,12 @@ namespace ScrollerMapper
                 Directory.CreateDirectory(o.OutputFolder);
             }
 
+            if (!Directory.Exists(Path.Combine(o.OutputFolder, "disk")))
+            {
+                Directory.CreateDirectory(Path.Combine(o.OutputFolder, "disk"));
+            }
+
+
             var sourcePath = Path.GetDirectoryName(Path.GetFullPath(o.InputFile));
             FileExtensions.SetSourceFolder(sourcePath);
 
@@ -77,24 +81,20 @@ namespace ScrollerMapper
 
     internal class MainConverter
     {
-        private readonly IEnumerable<IProcessor> _processors;
         private readonly Options _options;
+        private readonly GameProcessor _gameProcessor;
 
-        public MainConverter(IEnumerable<IProcessor> processors, Options options)
+        public MainConverter(Options options, GameProcessor gameProcessor)
         {
-            _processors = processors;
             _options = options;
+            _gameProcessor = gameProcessor;
         }
 
         public void Convert()
         {
-            var definition = _options.InputFile.ReadJsonFile<LevelDefinition>();
+            var definition = _options.InputFile.ReadJsonFile<GameDefinition>();
             definition.Validate();
-
-            foreach (var processor in _processors)
-            {
-                processor.Process(definition);
-            }
+            _gameProcessor.Process(definition);
         }
     }
 }

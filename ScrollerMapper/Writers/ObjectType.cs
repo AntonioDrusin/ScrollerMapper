@@ -12,5 +12,7 @@
         Sprite, 
         Audio,
         Data,
+        DiskFast,
+        DiskChip,
     }
 }

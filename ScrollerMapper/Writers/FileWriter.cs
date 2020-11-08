@@ -1,7 +1,6 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.IO;
-using System.Xml;
 using ScrollerMapper.StreamExtensions;
 
 namespace ScrollerMapper
@@ -12,6 +11,10 @@ namespace ScrollerMapper
         private readonly Lazy<IndentedTextWriter> _chipWriter;
         private readonly Lazy<IndentedTextWriter> _constantWriter;
         private BinaryWriter _currentWriter;
+
+        private BinaryWriter _diskChipWriter = null;
+        private BinaryWriter _diskFastWriter = null;
+        private ObjectType _currentObject;
 
         private IndentedTextWriter ChipWriter => _chipWriter.Value;
         private IndentedTextWriter NormalWriter => _constantWriter.Value;
@@ -32,15 +35,60 @@ namespace ScrollerMapper
                 new IndentedTextWriter(new StreamWriter(File.Create(fileName)), "\t"));
         }
 
+        public void StartDiskFile(string diskFileName)
+        {
+            var chipFileName = GetFileNameFor(ObjectType.DiskChip, diskFileName);
+            var fastFileName = GetFileNameFor(ObjectType.DiskFast, diskFileName);
+
+            _diskChipWriter = new BinaryWriter(File.Create(chipFileName));
+            _diskFastWriter = new BinaryWriter(File.Create(fastFileName));
+        }
+
+        public void CompleteDiskFile()
+        {
+            if (_diskChipWriter != null)
+            {
+                FlushAndClose(_diskChipWriter);
+                _diskChipWriter = null;
+            }
+            if (_diskFastWriter != null)
+            {
+                FlushAndClose(_diskFastWriter);
+                _diskFastWriter = null;
+            }
+        }
+
+        private void FlushAndClose(BinaryWriter writer)
+        {
+            writer.Flush();
+            writer.Close();
+            writer.Dispose();
+        }
+
         public void StartObject(ObjectType type, string name)
         {
-            var fileName = GetFileNameFor(type, name);
-            DataSection(type);
-            ChipWriter.WriteLine($"{name}{GetLabelPostfix(type)}:");
-            ChipWriter.Indent++;
-            ChipWriter.WriteLine($"incbin {Path.GetFileName(fileName)}");
+            _currentObject = type;
+            switch (type)
+            {
+                case ObjectType.DiskChip:
+                    NormalWriter.WriteLine($"{name}{GetLabelPostfix(type)}Offset\tequ\t{_diskChipWriter.BaseStream.Position}");
+                    _currentWriter = _diskChipWriter;
+                    break;
+                case ObjectType.DiskFast:
+                    NormalWriter.WriteLine($"{name}{GetLabelPostfix(type)}Offset\tequ\t{_diskFastWriter.BaseStream.Position}");
+                    _currentWriter = _diskFastWriter;
+                    break;
+                default:
+                    var fileName = GetFileNameFor(type, name);
+                    DataSection(type);
+                    ChipWriter.WriteLine($"{name}{GetLabelPostfix(type)}:");
+                    ChipWriter.Indent++;
+                    ChipWriter.WriteLine($"incbin {Path.GetFileName(fileName)}");
 
-            _currentWriter = new BinaryWriter(File.Create(fileName));
+                    _currentWriter = new BinaryWriter(File.Create(fileName));
+                    break;
+            }
+
         }
 
         private void DataSection(ObjectType type)
@@ -78,13 +126,23 @@ namespace ScrollerMapper
 
         public void EndObject()
         {
-            ChipWriter.WriteLine("even");
-            ChipWriter.Indent--;
-            ChipWriter.WriteLine();
-            _currentWriter?.Dispose();
+            switch (_currentObject)
+            {
+                case ObjectType.DiskChip:
+                    break;
+                case ObjectType.DiskFast:
+                    break;
+                default:
+                    ChipWriter.WriteLine("even");
+                    ChipWriter.Indent--;
+                    ChipWriter.WriteLine();
+                    _currentWriter?.Dispose();
+                    ChipWriter.Flush();
+                    NormalWriter.Flush();
+                    break;
+            }
             _currentWriter = null;
-            ChipWriter.Flush();
-            NormalWriter.Flush();
+
         }
 
         public void WriteByte(byte data)
@@ -154,6 +212,7 @@ namespace ScrollerMapper
         private string GetFileNameFor(ObjectType type, string name)
         {
             string extension;
+            string folder = "";
             switch (type)
             {
                 case ObjectType.Assembly:
@@ -186,12 +245,20 @@ namespace ScrollerMapper
                 case ObjectType.Data:
                     extension = "DAT";
                     break;
+                case ObjectType.DiskChip:
+                    extension = "chip";
+                    folder = "disk";
+                    break;
+                case ObjectType.DiskFast:
+                    extension = "fast";
+                    folder = "disk";
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
 
             if (name == null) name = Path.GetFileNameWithoutExtension(_options.InputFile);
-            return Path.Combine(_options.OutputFolder, $"{name}.{extension}");
+            return Path.Combine(Path.Combine(_options.OutputFolder, folder), $"{name}.{extension}");
         }
 
         private string GetLabelPostfix(ObjectType type)

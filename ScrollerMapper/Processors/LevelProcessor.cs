@@ -20,7 +20,6 @@ namespace ScrollerMapper.Processors
         const int BytesPerRow = 40;
         const int ScreenHeight = 256;
 
-        private readonly Options _options;
         private readonly TiledConverter _tiledConverter;
         private readonly ImageConverter _imageConverter;
         private readonly BobConverter _bobConverter;
@@ -36,7 +35,6 @@ namespace ScrollerMapper.Processors
         private LevelDefinition _definition;
 
         public LevelProcessor(
-            Options options,
             TiledConverter tiledConverter,
             ImageConverter imageConverter,
             BobConverter bobConverter,
@@ -45,7 +43,6 @@ namespace ScrollerMapper.Processors
             SfxRenderer sfxRenderer,
             IWriter writer)
         {
-            _options = options;
             _tiledConverter = tiledConverter;
             _imageConverter = imageConverter;
             _bobConverter = bobConverter;

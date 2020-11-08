@@ -10,6 +10,16 @@ namespace ScrollerMapperTests.Services
 
         public byte[] Data => _stream.ToArray();
 
+        public void StartDiskFile(string diskFileName)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void CompleteDiskFile()
+        {
+            throw new System.NotImplementedException();
+        }
+
         public void StartObject(ObjectType type, string name)
         {
             _stream = new MemoryStream();
