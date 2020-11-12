@@ -37,8 +37,8 @@ namespace ScrollerMapper
 
         public void StartDiskFile(string diskFileName)
         {
-            var chipFileName = GetFileNameFor(ObjectType.DiskChip, diskFileName);
-            var fastFileName = GetFileNameFor(ObjectType.DiskFast, diskFileName);
+            var chipFileName = GetFileNameFor(ObjectType.Chip, diskFileName);
+            var fastFileName = GetFileNameFor(ObjectType.Fast, diskFileName);
 
             _diskChipWriter = new BinaryWriter(File.Create(chipFileName));
             _diskFastWriter = new BinaryWriter(File.Create(fastFileName));
@@ -70,12 +70,12 @@ namespace ScrollerMapper
             _currentObject = type;
             switch (type)
             {
-                case ObjectType.DiskChip:
-                    NormalWriter.WriteLine($"{name}{GetLabelPostfix(type)}Offset\tequ\t{_diskChipWriter.BaseStream.Position}");
+                case ObjectType.Chip:
+                    NormalWriter.WriteLine($"{name}{GetLabelPostfix(type)}\tequ\t{_diskChipWriter.BaseStream.Position}");
                     _currentWriter = _diskChipWriter;
                     break;
-                case ObjectType.DiskFast:
-                    NormalWriter.WriteLine($"{name}{GetLabelPostfix(type)}Offset\tequ\t{_diskFastWriter.BaseStream.Position}");
+                case ObjectType.Fast:
+                    NormalWriter.WriteLine($"{name}{GetLabelPostfix(type)}\tequ\t{_diskFastWriter.BaseStream.Position}");
                     _currentWriter = _diskFastWriter;
                     break;
                 default:
@@ -128,9 +128,9 @@ namespace ScrollerMapper
         {
             switch (_currentObject)
             {
-                case ObjectType.DiskChip:
+                case ObjectType.Chip:
                     break;
-                case ObjectType.DiskFast:
+                case ObjectType.Fast:
                     break;
                 default:
                     ChipWriter.WriteLine("even");
@@ -245,11 +245,11 @@ namespace ScrollerMapper
                 case ObjectType.Data:
                     extension = "DAT";
                     break;
-                case ObjectType.DiskChip:
+                case ObjectType.Chip:
                     extension = "chip";
                     folder = "disk";
                     break;
-                case ObjectType.DiskFast:
+                case ObjectType.Fast:
                     extension = "fast";
                     folder = "disk";
                     break;

@@ -28,7 +28,7 @@ namespace ScrollerMapper.ImageRenderers
 
             _transformer.SetBitmap(bitmap);
 
-            _writer.StartObject(disk ? ObjectType.DiskChip: ObjectType.Bitmap, name);
+            _writer.StartObject(disk ? ObjectType.Chip: ObjectType.Bitmap, name);
 
 
             var byteWidth = _transformer.GetByteWidth();

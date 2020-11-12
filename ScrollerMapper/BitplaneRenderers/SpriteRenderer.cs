@@ -26,29 +26,29 @@ namespace ScrollerMapper.BitplaneRenderers
             _transformer = transformer;
         }
 
-        public void Render(string name, SpriteDefinition definition)
+        public void Render(string name, SpriteDefinition definition, bool disk = false)
         {
             _definition = definition;
 
             if (string.Compare(Path.GetExtension(definition.File), ".aseprite", StringComparison.InvariantCultureIgnoreCase) == 0)
             {
-                ConvertAseprite(name);
+                ConvertAseprite(name, disk);
             }
             else
             {
-                ConvertSprite(name);
+                ConvertSprite(name, disk);
             }
 
         }
 
-        private void ConvertAseprite(string name)
+        private void ConvertAseprite(string name, bool disk)
         {
             var result = Aseprite.ConvertAnimation(_definition.File, _options.OutputFolder);
             var aseprite = result.JsonFile.ReadJsonFile<AsepriteDefinition>();
             var palette = _definition.Palette.FromInputFolder().LoadIndexedBitmap();
             var bitmap = result.BitmapFile.LoadBitmap();
             
-            StartSpriteList(name, aseprite.Frames.Count);
+            StartSpriteList(name, aseprite.Frames.Count, disk);
 
             foreach (var frame in aseprite.Frames)
             {
@@ -74,13 +74,13 @@ namespace ScrollerMapper.BitplaneRenderers
             CompleteSpriteList();
         }
 
-        private void ConvertSprite(string name)
+        private void ConvertSprite(string name, bool disk)
         {
 
             var palette = _definition.Palette.FromInputFolder().LoadIndexedBitmap();
             var bitmap = _definition.File.FromInputFolder().LoadBitmap();
 
-            StartSpriteList(name, _definition.Count);
+            StartSpriteList(name, _definition.Count, disk);
             
             var spriteX = _definition.StartX;
             var spriteY = _definition.StartY;
@@ -141,10 +141,10 @@ namespace ScrollerMapper.BitplaneRenderers
             _offset += sprite.Sprite.Length + 8; // Add Control words and termination words as well, 
         }
 
-        private void StartSpriteList(string name, int count)
+        private void StartSpriteList(string name, int count, bool disk)
         {
             _converted = new List<byte[]>();
-            _writer.StartObject(ObjectType.Sprite, name);
+            _writer.StartObject(disk ? ObjectType.Chip : ObjectType.Sprite, name);
             WriteSpriteCommentsOnce();
             _writer.WriteWord((ushort) count);
             _offset = 2 + count * 8; // 4 words each frame for the "header"
