@@ -25,6 +25,11 @@ namespace ScrollerMapperTests.Services
             _stream = new MemoryStream();
         }
 
+        public void RestartObject(ObjectType type, string name)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public void EndObject()
         {
         }
@@ -58,7 +63,12 @@ namespace ScrollerMapperTests.Services
         {
         }
 
-        public long GetCurrentOffset()
+        public int GetCurrentOffset(ObjectType objectType)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public int GetOffset(string name)
         {
             throw new System.NotImplementedException();
         }

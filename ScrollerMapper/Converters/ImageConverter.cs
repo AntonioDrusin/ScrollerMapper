@@ -22,7 +22,7 @@ namespace ScrollerMapper.Converters
             var image = fileName.FromInputFolder().LoadIndexedBitmap();
             _bitplaneRenderer.Render(name, image, definition.PlaneCount, disk);
             var palette = new PaletteTransformer(name, image.Palette, definition.PlaneCount.PowerOfTwo());
-            _paletteRenderer.Render(palette);
+            _paletteRenderer.Render(palette, false);
             return new ImageInfo { 
                 Height = image.Height,
             };

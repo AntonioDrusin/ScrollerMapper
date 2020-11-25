@@ -73,6 +73,7 @@
     <Compile Include="BitplaneRenderers\BinaryFontRenderer.cs" />
     <Compile Include="DefinitionModels\MusicDefinition.cs" />
     <Compile Include="DefinitionModels\PlayerDefinition.cs" />
+    <Compile Include="HeaderRenderers\HeaderRenderer.cs" />
     <Compile Include="Processors\GameProcessor.cs" />
     <Compile Include="Processors\RunLengthEncoder.cs" />
     <Compile Include="SfxRenderers\SfxRenderer.cs" />
@@ -106,6 +107,7 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="PVW32Con.exe">

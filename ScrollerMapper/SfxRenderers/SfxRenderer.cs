@@ -47,7 +47,7 @@ namespace ScrollerMapper.SfxRenderers
             foreach (var soundTuple in sfxDefinition.Sounds)
             {
                 var sound = soundTuple.Value;
-                _soundOffsets.Add(soundTuple.Key, (int) _writer.GetCurrentOffset());
+                _soundOffsets.Add(soundTuple.Key, _writer.GetCurrentOffset(ObjectType.Data));
 
                 var startOffset = (ushort) _waveOffsets[sound.Waveform];
                 var period = (ushort) (TicksPerSecond / sound.Frequency);

@@ -42,7 +42,7 @@ namespace ScrollerMapper.Converters
 
             var image = tileSet.ImageFileName.FromInputFolder().LoadIndexedBitmap();
             var palette = new PaletteTransformer(name, image.Palette, definition.PlaneCount.PowerOfTwo());
-            _paletteRenderer.Render(palette);
+            _paletteRenderer.Render(palette, false);
             _tileRenderer.Render(name, image, tileWidth, tileHeight, definition.PlaneCount);
 
             var layer = tiled.Layer;

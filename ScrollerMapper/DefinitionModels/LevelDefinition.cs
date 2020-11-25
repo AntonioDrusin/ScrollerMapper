@@ -11,6 +11,9 @@ namespace ScrollerMapper.DefinitionModels
         public Dictionary<string, EnemyDefinition> Enemies { get; set; }
         public Dictionary<string, WaveDefinition> Waves { get; set; }
         public Dictionary<string, PathDefinition> Paths { get; set; }
+
+        public DataDefinition Data { get; set; }
+        
         public BackgroundDefinition Background { get; set; }
         public PanelDefinition Panel { get; set; }
         public int BobPlaneCount { get; set; }
@@ -57,6 +60,12 @@ namespace ScrollerMapper.DefinitionModels
             }
         }
     }
+
+    internal class DataDefinition
+    {
+        public List<SpriteDefinition> Sprites { get; set; }
+    }
+
 
     internal class BackgroundDefinition
     {

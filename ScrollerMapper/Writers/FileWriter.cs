@@ -1,5 +1,6 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
 using System.IO;
 using ScrollerMapper.StreamExtensions;
 
@@ -19,6 +20,8 @@ namespace ScrollerMapper
         private IndentedTextWriter ChipWriter => _chipWriter.Value;
         private IndentedTextWriter NormalWriter => _constantWriter.Value;
 
+        private List<string> _offsetDumps = new List<string>();
+
         public FileWriter(Options options)
         {
             _options = options;
@@ -37,11 +40,11 @@ namespace ScrollerMapper
 
         public void StartDiskFile(string diskFileName)
         {
-            var chipFileName = GetFileNameFor(ObjectType.Chip, diskFileName);
-            var fastFileName = GetFileNameFor(ObjectType.Fast, diskFileName);
+            _chipFileName = GetFileNameFor(ObjectType.Chip, diskFileName);
+            _fastFileName = GetFileNameFor(ObjectType.Fast, diskFileName);
 
-            _diskChipWriter = new BinaryWriter(File.Create(chipFileName));
-            _diskFastWriter = new BinaryWriter(File.Create(fastFileName));
+            _diskChipWriter = new BinaryWriter(File.Create(_chipFileName));
+            _diskFastWriter = new BinaryWriter(File.Create(_fastFileName));
         }
 
         public void CompleteDiskFile()
@@ -51,11 +54,14 @@ namespace ScrollerMapper
                 FlushAndClose(_diskChipWriter);
                 _diskChipWriter = null;
             }
+
             if (_diskFastWriter != null)
             {
                 FlushAndClose(_diskFastWriter);
                 _diskFastWriter = null;
             }
+
+            _offsets.Clear();
         }
 
         private void FlushAndClose(BinaryWriter writer)
@@ -65,18 +71,25 @@ namespace ScrollerMapper
             writer.Dispose();
         }
 
+        private Dictionary<string, int> _offsets = new Dictionary<string, int>();
+        private bool _seek;
+        private string _chipFileName;
+        private string _fastFileName;
+
         public void StartObject(ObjectType type, string name)
         {
             _currentObject = type;
             switch (type)
             {
                 case ObjectType.Chip:
-                    NormalWriter.WriteLine($"{name}{GetLabelPostfix(type)}\tequ\t{_diskChipWriter.BaseStream.Position}");
                     _currentWriter = _diskChipWriter;
+                    _offsets.Add(name, GetCurrentOffset(type));
+                    _offsetDumps.Add($"{_chipFileName} {name} {GetCurrentOffset(type)}");
                     break;
                 case ObjectType.Fast:
-                    NormalWriter.WriteLine($"{name}{GetLabelPostfix(type)}\tequ\t{_diskFastWriter.BaseStream.Position}");
                     _currentWriter = _diskFastWriter;
+                    _offsets.Add(name, GetCurrentOffset(type));
+                    _offsetDumps.Add($"{_fastFileName} {name} {GetCurrentOffset(type)}");
                     break;
                 default:
                     var fileName = GetFileNameFor(type, name);
@@ -88,7 +101,31 @@ namespace ScrollerMapper
                     _currentWriter = new BinaryWriter(File.Create(fileName));
                     break;
             }
+        }
 
+        public void RestartObject(ObjectType type, string name)
+        {
+            _seek = true;
+            _currentObject = type;
+            switch (type)
+            {
+                case ObjectType.Chip:
+                    _currentWriter = _diskChipWriter;
+                    break;
+                case ObjectType.Fast:
+                    _currentWriter = _diskFastWriter;
+                    
+                    break;
+                default:
+                    throw new NotSupportedException("Only chip and fast are supported with seek");
+            }
+            var offset = _offsets[name];
+            var pos = _currentWriter.Seek(offset, SeekOrigin.Begin);
+        }
+
+        public int GetOffset(string name)
+        {
+            return _offsets[name];
         }
 
         private void DataSection(ObjectType type)
@@ -141,8 +178,14 @@ namespace ScrollerMapper
                     NormalWriter.Flush();
                     break;
             }
-            _currentWriter = null;
 
+            if (_seek)
+            {
+                _currentWriter?.Seek(0, SeekOrigin.End);
+                _seek = false;
+            }
+
+            _currentWriter = null;
         }
 
         public void WriteByte(byte data)
@@ -150,9 +193,17 @@ namespace ScrollerMapper
             _currentWriter.Write(data);
         }
 
-        public long GetCurrentOffset()
+        public int GetCurrentOffset(ObjectType objectType)
         {
-            return _currentWriter.BaseStream.Position;
+            switch (objectType)
+            {
+                case ObjectType.Chip:
+                    return (int) _diskChipWriter.BaseStream.Position;
+                case ObjectType.Fast:
+                    return (int) _diskFastWriter.BaseStream.Position;
+                default:
+                    return (int) _currentWriter.BaseStream.Position;
+            }
         }
 
         public void WriteWord(ushort data)
@@ -175,7 +226,6 @@ namespace ScrollerMapper
             _currentWriter.Write(data, 0, count);
         }
 
-
         public void WriteCode(Code codeType, string code)
         {
             switch (codeType)
@@ -193,6 +243,12 @@ namespace ScrollerMapper
 
         public void Dispose()
         {
+            foreach (var line in _offsetDumps)
+            {
+                Console.WriteLine(line);
+            }
+
+
             if (_chipWriter.IsValueCreated)
             {
                 _chipWriter.Value.Close();
@@ -205,8 +261,8 @@ namespace ScrollerMapper
                 _constantWriter.Value.Dispose();
             }
 
-
-            _currentWriter?.Dispose();
+            _diskChipWriter?.Dispose();
+            _diskFastWriter?.Dispose();
         }
 
         private string GetFileNameFor(ObjectType type, string name)

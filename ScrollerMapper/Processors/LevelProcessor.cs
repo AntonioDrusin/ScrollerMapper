@@ -8,6 +8,7 @@ using ScrollerMapper.BitplaneRenderers;
 using ScrollerMapper.Converters;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.HeaderRenderers;
 using ScrollerMapper.PaletteRenderers;
 using ScrollerMapper.SfxRenderers;
 using ScrollerMapper.Transformers;
@@ -26,6 +27,7 @@ namespace ScrollerMapper.Processors
         private readonly IPaletteRenderer _paletteRenderer;
         private readonly SpriteRenderer _spriteRenderer;
         private readonly SfxRenderer _sfxRenderer;
+        private readonly HeaderRenderer _headerRenderer;
         private readonly IWriter _writer;
         private readonly Dictionary<string, BobInfo> _bobs;
         private int _bobIndex;
@@ -41,6 +43,7 @@ namespace ScrollerMapper.Processors
             IPaletteRenderer paletteRenderer,
             SpriteRenderer spriteRenderer,
             SfxRenderer sfxRenderer,
+            HeaderRenderer headerRenderer,
             IWriter writer)
         {
             _tiledConverter = tiledConverter;
@@ -49,6 +52,7 @@ namespace ScrollerMapper.Processors
             _paletteRenderer = paletteRenderer;
             _spriteRenderer = spriteRenderer;
             _sfxRenderer = sfxRenderer;
+            _headerRenderer = headerRenderer;
             _writer = writer;
             _bobs = new Dictionary<string, BobInfo>();
         }
@@ -56,6 +60,10 @@ namespace ScrollerMapper.Processors
         public void Process(LevelDefinition definition)
         {
             _definition = definition;
+
+            WriteLevelHeader();
+
+            ProcessData(definition.Data); // Generic level data?
 
             if (_definition.Tiles != null)
             {
@@ -74,7 +82,7 @@ namespace ScrollerMapper.Processors
                 var paletteBitmap = _definition.SpritePaletteFile.FromInputFolder().LoadIndexedBitmap();
 
                 var palette = new PaletteTransformer("sprite", paletteBitmap.Palette, 16);
-                _paletteRenderer.Render(palette);
+                _paletteRenderer.Render(palette, false);
 
                 if (_definition.Player != null)
                 {
@@ -99,7 +107,7 @@ namespace ScrollerMapper.Processors
                     {
                         if (shot.Bob == null)
                             throw new ConversionException("Must define 'bob' for each of the 'player.shots'");
-                        ConvertBob($"shot{i}", shot.Bob, _definition, bobPalette);
+                        _bobConverter.ConvertBob($"shot{i}", shot.Bob, definition.BobPlaneCount, bobPalette.Palette, _definition.BobPaletteFlip0AndLast);
                         i++;
                     }
 
@@ -115,7 +123,7 @@ namespace ScrollerMapper.Processors
                             $"\tdc.w\t{shot.Vx}, {shot.Hit}, {shot.MaxCount}, {shot.Cooldown}\t;vx,hit,maxCount,cooldDown");
 
                         int soundOffset = _sfxRenderer.GetSoundLutOffset(shot.Sound);
-                        
+
                         _writer.WriteCode(Code.Data, $"\tdc.w\t{soundOffset}\t; sound Offset");
                         if (shot.MaxCount > maxCount) maxCount = shot.MaxCount;
                         i++;
@@ -140,10 +148,9 @@ namespace ScrollerMapper.Processors
                     _writer.WriteCode(Code.Normal,
                         $"PLAYER_INVULNDURATION\t\tequ\t{_definition.Player.Death.InvulnerabilityDuration}");
 
-                    _writer.WriteCode(Code.Data, "\tsection\tdata");
-                    _writer.WriteCode(Code.Data, "PlayerDeathPath:");
+                    _writer.StartObject(ObjectType.Data, "PlayerDeathPath");
                     WritePathData(_definition.Player.Death.Path);
-                    _writer.WriteCode(Code.Data, "\n\n");
+                    _writer.EndObject();
                 }
             }
             else if (_definition.Player != null)
@@ -193,6 +200,7 @@ namespace ScrollerMapper.Processors
             WritePaths(_definition.Paths);
             WriteWaves(_definition);
             WriteBobList();
+            CompleteStructureParts();
         }
 
         private void WriteShotStructure()
@@ -288,21 +296,20 @@ namespace ScrollerMapper.Processors
             _paths = new Dictionary<string, PathInfo>();
             WritePathComments();
 
-            _writer.WriteCode(Code.Data, "\tsection\tdata");
-            _writer.WriteCode(Code.Data, $"Paths:");
-            var offset = 0;
+            _writer.StartObject(ObjectType.Fast, "Paths");
             var index = 0;
             foreach (var path in definitionPaths)
             {
-                _paths.Add(path.Key, new PathInfo {Name = path.Key, Offset = offset, Index = index++});
-                _writer.WriteCode(Code.Data, $"; path '{path.Key}', offset {offset}");
-                offset += WritePathData(path.Value);
+                var currentOffset = _writer.GetCurrentOffset(ObjectType.Fast);
+                _paths.Add(path.Key, new PathInfo {Name = path.Key, Offset = currentOffset, Index = index++});
+                WritePathData(path.Value);
             }
+
+            _writer.EndObject();
         }
 
-        private int WritePathData(PathDefinition path)
+        private void WritePathData(PathDefinition path)
         {
-            var offset = 0;
             var firstTransformer = new SmoothInputPathTransformer();
             var secondTransformer = new OutputPathCoalesceTransformer();
             var finalPath = firstTransformer.TransformPath(path.Steps);
@@ -310,15 +317,15 @@ namespace ScrollerMapper.Processors
 
             foreach (var step in finalPath)
             {
-                _writer.WriteCode(Code.Data,
-                    $"\t\tdc.w\t\t{step.FrameCount},{step.VelocityX},{step.VelocityY}");
-                offset += 6;
+                _writer.WriteWord(step.FrameCount);
+                _writer.WriteWord((ushort) step.VelocityX);
+                _writer.WriteWord((ushort) step.VelocityY);
             }
 
-            _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t0, 0, 0");
-            offset += 6;
-
-            return offset;
+            // Termination
+            _writer.WriteWord(0);
+            _writer.WriteWord(0);
+            _writer.WriteWord(0);
         }
 
         private void WritePathComments()
@@ -355,7 +362,7 @@ namespace ScrollerMapper.Processors
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Count}");
                 _writer.WriteCode(Code.Data, $"\t\tdc.l\t\tEnemies+{enemy.Offset}");
-                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\tPaths+{path.Offset}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\t{path.Offset}\t\t ;Offset from start of loading ptr ");
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Period}");
 
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.StartX},{wave.StartY}");
@@ -454,13 +461,13 @@ namespace ScrollerMapper.Processors
 
         private void RenderBobPalette(ColorPalette bitmapPalette)
         {
-            var palette = new PaletteTransformer("bob", bitmapPalette, _definition.BobPlaneCount.PowerOfTwo());
+            var palette = new PaletteTransformer("BobPalette", bitmapPalette, _definition.BobPlaneCount.PowerOfTwo());
             if (_definition.BobPaletteFlip0AndLast)
             {
                 palette.Flip(0, palette.Length - 1);
             }
 
-            _paletteRenderer.Render(palette);
+            _paletteRenderer.Render(palette, true);
         }
 
         private void WriteMapLookup()
@@ -527,14 +534,54 @@ namespace ScrollerMapper.Processors
 
         private void WriteBobList()
         {
-            _writer.WriteCode(Code.Normal, $"\nBOB_COUNT\t\tequ\t{_bobs.Count}");
-            _writer.WriteCode(Code.Data, "\n\n** Pointers to all loaded Bobs\n");
+            _writer.WriteCode(Code.Data, "\n\n** Pointers to all loaded Bobs. Null terminated\n");
             _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, "BobPtrs:");
             foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
             {
                 _writer.WriteCode(Code.Data, $"\tdc.l\t{bob.Value.Name}Bob");
             }
+            _writer.WriteCode(Code.Data, $"\tdc.l\t0");
+        }
+
+        private readonly List<string> _chipHeaders = new List<string> {"SpriteList"};
+        private readonly List<string> _fastHeaders = new List<string> {"BobPalette"};
+
+        private void WriteLevelHeader()
+        {
+            _headerRenderer.WriteHeader("Level", ObjectType.Fast, _fastHeaders);
+            _headerRenderer.WriteHeader("Level", ObjectType.Chip, _chipHeaders);
+        }
+
+        private void CompleteStructureParts()
+        {
+            _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Fast, _fastHeaders);
+            _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Chip, _chipHeaders);
+        }
+
+        private void ProcessData(DataDefinition dataDefinition)
+        {
+            var spriteOffsets = new List<int>();
+
+            if (dataDefinition?.Sprites != null)
+            {
+                int i = 0;
+                foreach (var sprite in dataDefinition.Sprites)
+                {
+                    spriteOffsets.Add(_writer.GetCurrentOffset(ObjectType.Chip));
+                    _spriteRenderer.Render(i + "Sprite", sprite, true);
+                    i++;
+                }
+
+                _writer.StartObject(ObjectType.Chip, "SpriteList"); // References to objects that are in chip.
+                foreach (var offset in spriteOffsets)
+                {
+                    _writer.WriteLong((uint)offset);
+                }
+                _writer.WriteLong(0); // List terminator
+                _writer.EndObject();
+            }
+
         }
     }
 }

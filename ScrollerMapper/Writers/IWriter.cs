@@ -11,6 +11,7 @@
         void StartDiskFile(string diskFileName);
         void CompleteDiskFile();
         void StartObject(ObjectType type, string name);
+        void RestartObject(ObjectType type, string name);
         void EndObject();
         void WriteByte(byte data);
         void WriteWord(ushort data);
@@ -18,6 +19,7 @@
         void WriteBlob(byte[] data);
         void WriteBlob(byte[] data, int count);
         void WriteCode(Code codeType, string code);
-        long GetCurrentOffset();
+        int GetCurrentOffset(ObjectType objectType);
+        int GetOffset(string name);
     }
 }

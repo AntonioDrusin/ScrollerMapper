@@ -73,7 +73,7 @@ namespace ScrollerMapperTests
             {
                 0x00, 0x01, // WORD WIDTH of the bobs               //0
                 0x00, 0x02, // WORD Number of bobs                  //2
-                
+
                 // First bob metadata
                 0x00,0x00,0x00, 36,                                         // 4  Bob offset
                 0x00,0x00,0x00, 48, // 8 Mask offset
