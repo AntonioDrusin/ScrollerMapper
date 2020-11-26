@@ -13,14 +13,14 @@ namespace ScrollerMapper
         private readonly Lazy<IndentedTextWriter> _constantWriter;
         private BinaryWriter _currentWriter;
 
-        private BinaryWriter _diskChipWriter = null;
-        private BinaryWriter _diskFastWriter = null;
+        private BinaryWriter _diskChipWriter;
+        private BinaryWriter _diskFastWriter;
         private ObjectType _currentObject;
 
         private IndentedTextWriter ChipWriter => _chipWriter.Value;
         private IndentedTextWriter NormalWriter => _constantWriter.Value;
 
-        private List<string> _offsetDumps = new List<string>();
+        private readonly List<string> _offsetDumps = new List<string>();
 
         public FileWriter(Options options)
         {
@@ -71,7 +71,7 @@ namespace ScrollerMapper
             writer.Dispose();
         }
 
-        private Dictionary<string, int> _offsets = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _offsets = new Dictionary<string, int>();
         private bool _seek;
         private string _chipFileName;
         private string _fastFileName;
@@ -120,7 +120,7 @@ namespace ScrollerMapper
                     throw new NotSupportedException("Only chip and fast are supported with seek");
             }
             var offset = _offsets[name];
-            var pos = _currentWriter.Seek(offset, SeekOrigin.Begin);
+            _currentWriter.Seek(offset, SeekOrigin.Begin);
         }
 
         public int GetOffset(string name)
@@ -166,8 +166,16 @@ namespace ScrollerMapper
             switch (_currentObject)
             {
                 case ObjectType.Chip:
-                    break;
                 case ObjectType.Fast:
+                    if (!_seek)
+                    {
+                        var pos = _currentWriter.BaseStream.Position;
+                        if (pos % 2 > 0)
+                        {
+                            _currentWriter.Write((byte)0);
+                        }
+                    }
+
                     break;
                 default:
                     ChipWriter.WriteLine("even");

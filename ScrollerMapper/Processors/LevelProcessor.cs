@@ -107,7 +107,8 @@ namespace ScrollerMapper.Processors
                     {
                         if (shot.Bob == null)
                             throw new ConversionException("Must define 'bob' for each of the 'player.shots'");
-                        _bobConverter.ConvertBob($"shot{i}", shot.Bob, definition.BobPlaneCount, bobPalette.Palette, _definition.BobPaletteFlip0AndLast);
+                        _bobConverter.ConvertBob($"shot{i}", shot.Bob, definition.BobPlaneCount, bobPalette.Palette,
+                            _definition.BobPaletteFlip0AndLast);
                         i++;
                     }
 
@@ -502,7 +503,6 @@ namespace ScrollerMapper.Processors
                 lookup.Append($"{offset}");
             }
 
-            _writer.WriteCode(Code.Data, "\tsection\tdata");
             _writer.WriteCode(Code.Data, lookup.ToString());
         }
 
@@ -541,22 +541,23 @@ namespace ScrollerMapper.Processors
             {
                 _writer.WriteCode(Code.Data, $"\tdc.l\t{bob.Value.Name}Bob");
             }
+
             _writer.WriteCode(Code.Data, $"\tdc.l\t0");
         }
 
-        private readonly List<string> _chipHeaders = new List<string> {"SpriteList"};
-        private readonly List<string> _fastHeaders = new List<string> {"BobPalette"};
+        //private readonly List<string> _chipHeaders = new List<string> {"SpriteList"};
+        private readonly List<string> _fastHeaders = new List<string> {"BobPalette", "SpriteArray"};
 
         private void WriteLevelHeader()
         {
             _headerRenderer.WriteHeader("Level", ObjectType.Fast, _fastHeaders);
-            _headerRenderer.WriteHeader("Level", ObjectType.Chip, _chipHeaders);
+//            _headerRenderer.WriteHeader("Level", ObjectType.Chip, _chipHeaders);
         }
 
         private void CompleteStructureParts()
         {
             _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Fast, _fastHeaders);
-            _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Chip, _chipHeaders);
+//            _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Chip, _chipHeaders);
         }
 
         private void ProcessData(DataDefinition dataDefinition)
@@ -573,15 +574,14 @@ namespace ScrollerMapper.Processors
                     i++;
                 }
 
-                _writer.StartObject(ObjectType.Chip, "SpriteList"); // References to objects that are in chip.
+                _writer.StartObject(ObjectType.Fast, "SpriteArray"); // References to objects that are in chip.
+                _writer.WriteWord((ushort) (spriteOffsets.Count-1));
                 foreach (var offset in spriteOffsets)
                 {
-                    _writer.WriteLong((uint)offset);
+                    _writer.WriteLong((uint) offset);
                 }
-                _writer.WriteLong(0); // List terminator
                 _writer.EndObject();
             }
-
         }
     }
 }
