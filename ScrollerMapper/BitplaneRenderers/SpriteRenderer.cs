@@ -26,29 +26,29 @@ namespace ScrollerMapper.BitplaneRenderers
             _transformer = transformer;
         }
 
-        public void Render(string name, SpriteDefinition definition, bool disk = false)
+        public void Render(string name, SpriteDefinition definition, Destination destination = Destination.Executable)
         {
             _definition = definition;
 
             if (string.Compare(Path.GetExtension(definition.File), ".aseprite", StringComparison.InvariantCultureIgnoreCase) == 0)
             {
-                ConvertAseprite(name, disk);
+                ConvertAseprite(name, destination);
             }
             else
             {
-                ConvertSprite(name, disk);
+                ConvertSprite(name, destination);
             }
 
         }
 
-        private void ConvertAseprite(string name, bool disk)
+        private void ConvertAseprite(string name, Destination destination)
         {
             var result = Aseprite.ConvertAnimation(_definition.File, _options.OutputFolder);
             var aseprite = result.JsonFile.ReadJsonFile<AsepriteDefinition>();
             var palette = _definition.Palette.FromInputFolder().LoadIndexedBitmap();
             var bitmap = result.BitmapFile.LoadBitmap();
             
-            StartSpriteList(name, aseprite.Frames.Count, disk);
+            StartSpriteList(name, aseprite.Frames.Count, destination);
 
             foreach (var frame in aseprite.Frames)
             {
@@ -74,13 +74,13 @@ namespace ScrollerMapper.BitplaneRenderers
             CompleteSpriteList();
         }
 
-        private void ConvertSprite(string name, bool disk)
+        private void ConvertSprite(string name, Destination destination)
         {
 
             var palette = _definition.Palette.FromInputFolder().LoadIndexedBitmap();
             var bitmap = _definition.File.FromInputFolder().LoadBitmap();
 
-            StartSpriteList(name, _definition.Count, disk);
+            StartSpriteList(name, _definition.Count, destination);
             
             var spriteX = _definition.StartX;
             var spriteY = _definition.StartY;
@@ -141,10 +141,10 @@ namespace ScrollerMapper.BitplaneRenderers
             _offset += sprite.Sprite.Length + 8; // Add Control words and termination words as well, 
         }
 
-        private void StartSpriteList(string name, int count, bool disk)
+        private void StartSpriteList(string name, int count, Destination destination)
         {
             _converted = new List<byte[]>();
-            _writer.StartObject(disk ? ObjectType.Chip : ObjectType.Sprite, name);
+            _writer.StartObject(destination == Destination.Disk ? ObjectType.Chip : ObjectType.Sprite, name);
             WriteSpriteCommentsOnce();
             _writer.WriteWord((ushort) count);
             _offset = 2 + count * 8; // 4 words each frame for the "header"

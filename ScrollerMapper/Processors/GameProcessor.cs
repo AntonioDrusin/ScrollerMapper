@@ -61,7 +61,7 @@ namespace ScrollerMapper.Processors
             _headerRenderer.WriteHeader("Menu", ObjectType.Fast, _fastHeaders);
             _headerRenderer.WriteHeader("Menu", ObjectType.Chip, _chipHeaders);
 
-            _imageConverter.ConvertAll("menu", definitionMenu.Background, true);
+            _imageConverter.ConvertAll("menu", definitionMenu.Background, Destination.Disk);
             _musicConverter.ConvertAll(definitionMenu.Music);
 
             _headerRenderer.WriteHeaderOffsets("Menu", ObjectType.Fast, _fastHeaders);
@@ -82,8 +82,8 @@ namespace ScrollerMapper.Processors
 
         private void ProcessAllLevels(GameDefinition definition)
         {
-            int maxFastSize = 0;
-            int maxChipSize = 0;
+            uint maxFastSize = 0;
+            uint maxChipSize = 0;
 
             foreach (var levelTuple in definition.Levels)
             {

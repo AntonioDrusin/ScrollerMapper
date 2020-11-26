@@ -63,12 +63,12 @@ namespace ScrollerMapperTests.Services
         {
         }
 
-        public int GetCurrentOffset(ObjectType objectType)
+        public uint GetCurrentOffset(ObjectType objectType)
         {
             throw new System.NotImplementedException();
         }
 
-        public int GetOffset(string name)
+        public uint GetOffset(string name)
         {
             throw new System.NotImplementedException();
         }

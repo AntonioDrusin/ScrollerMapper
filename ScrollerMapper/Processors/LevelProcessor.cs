@@ -108,7 +108,7 @@ namespace ScrollerMapper.Processors
                         if (shot.Bob == null)
                             throw new ConversionException("Must define 'bob' for each of the 'player.shots'");
                         _bobConverter.ConvertBob($"shot{i}", shot.Bob, definition.BobPlaneCount, bobPalette.Palette,
-                            _definition.BobPaletteFlip0AndLast);
+                            _definition.BobPaletteFlip0AndLast, Destination.Executable);
                         i++;
                     }
 
@@ -123,7 +123,7 @@ namespace ScrollerMapper.Processors
                         _writer.WriteCode(Code.Data,
                             $"\tdc.w\t{shot.Vx}, {shot.Hit}, {shot.MaxCount}, {shot.Cooldown}\t;vx,hit,maxCount,cooldDown");
 
-                        int soundOffset = _sfxRenderer.GetSoundLutOffset(shot.Sound);
+                        var soundOffset = _sfxRenderer.GetSoundLutOffset(shot.Sound);
 
                         _writer.WriteCode(Code.Data, $"\tdc.w\t{soundOffset}\t; sound Offset");
                         if (shot.MaxCount > maxCount) maxCount = shot.MaxCount;
@@ -185,7 +185,7 @@ namespace ScrollerMapper.Processors
 
             foreach (var bob in _definition.Bobs)
             {
-                ConvertBob(bob.Key, bob.Value, _definition, bobPalette);
+                ConvertBobToDisk(bob.Key, bob.Value, _definition, bobPalette);
             }
 
             _writer.WriteCode(Code.Normal, "\n\n");
@@ -219,11 +219,14 @@ namespace ScrollerMapper.Processors
 ");
         }
 
-        private void ConvertBob(string name, BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
+        private void ConvertBobToDisk(string name, BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
         {
+            var offset = _writer.GetCurrentOffset(ObjectType.Chip);
+
             _bobConverter.ConvertBob(name, bob, definition.BobPlaneCount, bobPalette.Palette,
-                _definition.BobPaletteFlip0AndLast);
-            _bobs.Add(name, new BobInfo {Index = _bobIndex++, Name = name});
+                _definition.BobPaletteFlip0AndLast, Destination.Disk);
+
+            _bobs.Add(name, new BobInfo {Index = _bobIndex++, Name = name, Offset = offset});
         }
 
         private void ConvertTiles(LevelDefinition definition)
@@ -238,9 +241,9 @@ namespace ScrollerMapper.Processors
         {
             WriteEnemyComments();
             _writer.WriteCode(Code.Data, "\tsection\tdata");
-            _writer.WriteCode(Code.Data, "Enemies:");
+            _writer.WriteCode(Code.Data, "EnemiesArray:");
             _enemies = new Dictionary<string, EnemyInfo>();
-
+            _writer.WriteCode(Code.Data, $"\tdc.w\t{definition.Enemies.Count-1}\t; enemy count -1 ");
             var index = 0;
             var offset = 0;
             foreach (var enemyKeyValue in definition.Enemies)
@@ -256,12 +259,12 @@ namespace ScrollerMapper.Processors
                     throw new ConversionException($"Bob '{enemy.Bob}' for enemy '{enemyKeyValue.Key}' was not found.");
                 }
 
-                _writer.WriteCode(Code.Data, $"\tdc.l\t{bobForEnemy.Name}Bob");
+                _writer.WriteCode(Code.Data, $"\tdc.l\t{bobForEnemy.Offset}");
                 _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.FrameDelay}\t\t;Cel period");
                 _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.Hp}\t\t;Hit points");
 
                 var pointString = enemy.Points.ToString("D8");
-                var pointsCoded = String.Join(",",
+                var pointsCoded = string.Join(",",
                     Enumerable.Range(0, 4).Select(i => $"${pointString.Substring(i * 2, 2)}"));
 
                 var soundOffset = _sfxRenderer.GetSoundLutOffset(enemy.ExplosionSound);
@@ -362,7 +365,7 @@ namespace ScrollerMapper.Processors
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.FrameDelay}");
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Count}");
-                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\tEnemies+{enemy.Offset}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\tEnemiesArray+2+{enemy.Offset}");
                 _writer.WriteCode(Code.Data, $"\t\tdc.l\t\t{path.Offset}\t\t ;Offset from start of loading ptr ");
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Period}");
 
@@ -534,35 +537,30 @@ namespace ScrollerMapper.Processors
 
         private void WriteBobList()
         {
-            _writer.WriteCode(Code.Data, "\n\n** Pointers to all loaded Bobs. Null terminated\n");
-            _writer.WriteCode(Code.Data, "\tsection\tdata");
-            _writer.WriteCode(Code.Data, "BobPtrs:");
+            _writer.StartObject(ObjectType.Fast, "BobArray");
+            _writer.WriteWord((ushort)(_bobs.Count-1));
             foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
             {
-                _writer.WriteCode(Code.Data, $"\tdc.l\t{bob.Value.Name}Bob");
+                _writer.WriteLong(bob.Value.Offset);
             }
-
-            _writer.WriteCode(Code.Data, $"\tdc.l\t0");
+            _writer.EndObject();
         }
 
-        //private readonly List<string> _chipHeaders = new List<string> {"SpriteList"};
-        private readonly List<string> _fastHeaders = new List<string> {"BobPalette", "SpriteArray"};
+        private readonly List<string> _fastHeaders = new List<string> {"BobPalette", "SpriteArray", "BobArray"};
 
         private void WriteLevelHeader()
         {
             _headerRenderer.WriteHeader("Level", ObjectType.Fast, _fastHeaders);
-//            _headerRenderer.WriteHeader("Level", ObjectType.Chip, _chipHeaders);
         }
 
         private void CompleteStructureParts()
         {
             _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Fast, _fastHeaders);
-//            _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Chip, _chipHeaders);
         }
 
         private void ProcessData(DataDefinition dataDefinition)
         {
-            var spriteOffsets = new List<int>();
+            var spriteOffsets = new List<uint>();
 
             if (dataDefinition?.Sprites != null)
             {
@@ -570,7 +568,7 @@ namespace ScrollerMapper.Processors
                 foreach (var sprite in dataDefinition.Sprites)
                 {
                     spriteOffsets.Add(_writer.GetCurrentOffset(ObjectType.Chip));
-                    _spriteRenderer.Render(i + "Sprite", sprite, true);
+                    _spriteRenderer.Render(i + "Sprite", sprite, Destination.Disk);
                     i++;
                 }
 
@@ -578,7 +576,7 @@ namespace ScrollerMapper.Processors
                 _writer.WriteWord((ushort) (spriteOffsets.Count-1));
                 foreach (var offset in spriteOffsets)
                 {
-                    _writer.WriteLong((uint) offset);
+                    _writer.WriteLong(offset);
                 }
                 _writer.EndObject();
             }

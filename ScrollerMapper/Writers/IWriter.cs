@@ -6,6 +6,12 @@
         Normal
     }
 
+    internal enum Destination
+    {
+        Executable,
+        Disk
+    }
+
     internal interface IWriter
     {
         void StartDiskFile(string diskFileName);
@@ -19,7 +25,7 @@
         void WriteBlob(byte[] data);
         void WriteBlob(byte[] data, int count);
         void WriteCode(Code codeType, string code);
-        int GetCurrentOffset(ObjectType objectType);
-        int GetOffset(string name);
+        uint GetCurrentOffset(ObjectType objectType);
+        uint GetOffset(string name);
     }
 }

@@ -8,7 +8,7 @@ namespace ScrollerMapper.BitplaneRenderers
 {
     internal interface IBobRenderer
     {
-        void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, bool colorFlip);
+        void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, bool colorFlip, Destination destination = Destination.Executable);
     }
 
     internal class BinaryBobRenderer : IBobRenderer
@@ -30,7 +30,7 @@ namespace ScrollerMapper.BitplaneRenderers
         // 1. color 0 becomes color 15
         // 1. color 15 becomes color 0
         // 1. all of color 15 are now transparent
-        public void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, bool colorFlip)
+        public void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, bool colorFlip, Destination destination = Destination.Executable)
         {
             _definition = definition;
             _planeCount = planeCount;
@@ -43,7 +43,7 @@ namespace ScrollerMapper.BitplaneRenderers
                 throw new ConversionException("Bob width must be a multiple of 8.");
             }
             
-            _writer.StartObject(ObjectType.Bob, name);
+            _writer.StartObject(destination == Destination.Disk ? ObjectType.Chip : ObjectType.Bob, name);
 
             SaveBobsWithMasks(bitmap, 0);
 

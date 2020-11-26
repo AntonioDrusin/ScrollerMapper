@@ -71,7 +71,7 @@ namespace ScrollerMapper
             writer.Dispose();
         }
 
-        private readonly Dictionary<string, int> _offsets = new Dictionary<string, int>();
+        private readonly Dictionary<string, uint> _offsets = new Dictionary<string, uint>();
         private bool _seek;
         private string _chipFileName;
         private string _fastFileName;
@@ -120,10 +120,10 @@ namespace ScrollerMapper
                     throw new NotSupportedException("Only chip and fast are supported with seek");
             }
             var offset = _offsets[name];
-            _currentWriter.Seek(offset, SeekOrigin.Begin);
+            _currentWriter.Seek((int)offset, SeekOrigin.Begin);
         }
 
-        public int GetOffset(string name)
+        public uint GetOffset(string name)
         {
             return _offsets[name];
         }
@@ -201,16 +201,16 @@ namespace ScrollerMapper
             _currentWriter.Write(data);
         }
 
-        public int GetCurrentOffset(ObjectType objectType)
+        public uint GetCurrentOffset(ObjectType objectType)
         {
             switch (objectType)
             {
                 case ObjectType.Chip:
-                    return (int) _diskChipWriter.BaseStream.Position;
+                    return (uint) _diskChipWriter.BaseStream.Position;
                 case ObjectType.Fast:
-                    return (int) _diskFastWriter.BaseStream.Position;
+                    return (uint) _diskFastWriter.BaseStream.Position;
                 default:
-                    return (int) _currentWriter.BaseStream.Position;
+                    return (uint) _currentWriter.BaseStream.Position;
             }
         }
 

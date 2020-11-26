@@ -9,7 +9,7 @@ namespace ScrollerMapper.SfxRenderers
         private readonly IWriter _writer;
         private const int BufferSize = 128;
         private readonly Dictionary<string, int> _waveOffsets = new Dictionary<string, int>();
-        private readonly Dictionary<string, int> _soundOffsets = new Dictionary<string, int>();
+        private readonly Dictionary<string, uint> _soundOffsets = new Dictionary<string, uint>();
         private readonly Dictionary<string, int> _waveLengths = new Dictionary<string, int>();
         private const double TicksPerSecond = 3546895.0; // HWM PAL
 
@@ -102,7 +102,7 @@ namespace ScrollerMapper.SfxRenderers
             _writer.EndObject();
         }
 
-        public int GetSoundLutOffset(string soundName)
+        public uint GetSoundLutOffset(string soundName)
         {
             try
             {

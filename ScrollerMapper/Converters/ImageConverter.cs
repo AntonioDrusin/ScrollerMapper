@@ -16,11 +16,11 @@ namespace ScrollerMapper.Converters
             _bitplaneRenderer = bitplaneRenderer;
         }
 
-        public ImageInfo ConvertAll(string name, ImageDefinition definition, bool disk = false)
+        public ImageInfo ConvertAll(string name, ImageDefinition definition, Destination destination = Destination.Executable)
         {
             var fileName = definition.ImageFile;
             var image = fileName.FromInputFolder().LoadIndexedBitmap();
-            _bitplaneRenderer.Render(name, image, definition.PlaneCount, disk);
+            _bitplaneRenderer.Render(name, image, definition.PlaneCount, destination);
             var palette = new PaletteTransformer(name, image.Palette, definition.PlaneCount.PowerOfTwo());
             _paletteRenderer.Render(palette, false);
             return new ImageInfo { 
