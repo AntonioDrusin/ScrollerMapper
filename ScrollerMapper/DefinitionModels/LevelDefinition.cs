@@ -126,8 +126,8 @@ namespace ScrollerMapper.DefinitionModels
     {
         public string Bob { get; set; }
         public int Points { get; set; }
-        public int FrameDelay { get; set; }
-        public int Hp { get; set; } = 2;
+        public ushort FrameDelay { get; set; }
+        public ushort Hp { get; set; } = 2;
         public string ExplosionSound { get; set; }
     }
 

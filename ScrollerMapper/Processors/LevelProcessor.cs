@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using ScrollerMapper.BitplaneRenderers;
@@ -240,12 +241,9 @@ namespace ScrollerMapper.Processors
         private void WriteEnemies(LevelDefinition definition)
         {
             WriteEnemyComments();
-            _writer.WriteCode(Code.Data, "\tsection\tdata");
-            _writer.WriteCode(Code.Data, "EnemiesArray:");
+            _writer.StartObject(ObjectType.Fast, "Enemies");
             _enemies = new Dictionary<string, EnemyInfo>();
-            _writer.WriteCode(Code.Data, $"\tdc.w\t{definition.Enemies.Count-1}\t; enemy count -1 ");
             var index = 0;
-            var offset = 0;
             foreach (var enemyKeyValue in definition.Enemies)
             {
                 BobInfo bobForEnemy;
@@ -259,22 +257,23 @@ namespace ScrollerMapper.Processors
                     throw new ConversionException($"Bob '{enemy.Bob}' for enemy '{enemyKeyValue.Key}' was not found.");
                 }
 
-                _writer.WriteCode(Code.Data, $"\tdc.l\t{bobForEnemy.Offset}");
-                _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.FrameDelay}\t\t;Cel period");
-                _writer.WriteCode(Code.Data, $"\tdc.w\t{enemy.Hp}\t\t;Hit points");
+                var offset = _writer.GetCurrentOffset(ObjectType.Fast);
 
+                _writer.WriteOffset(ObjectType.Chip, bobForEnemy.Offset);
+                _writer.WriteWord(enemy.FrameDelay);
+                _writer.WriteWord(enemy.Hp);
+                
                 var pointString = enemy.Points.ToString("D8");
-                var pointsCoded = string.Join(",",
-                    Enumerable.Range(0, 4).Select(i => $"${pointString.Substring(i * 2, 2)}"));
+                foreach (var s in Enumerable.Range(0, 4).Select(i => byte.Parse($"{pointString.Substring(i * 2, 2)}", NumberStyles.HexNumber)))
+                {
+                    _writer.WriteByte(s);
+                }
 
-                var soundOffset = _sfxRenderer.GetSoundLutOffset(enemy.ExplosionSound);
-
-                _writer.WriteCode(Code.Data, $"\tdc.b\t{pointsCoded}\t\t;Points");
-                _writer.WriteCode(Code.Data, $"\tdc.w\t{soundOffset}\t\t;Sound offset");
+                var soundOffset = (ushort)_sfxRenderer.GetSoundLutOffset(enemy.ExplosionSound);
+                _writer.WriteWord(soundOffset);
 
                 _enemies.Add(enemyKeyValue.Key,
                     new EnemyInfo {Name = enemyKeyValue.Key, Index = index++, Offset = offset});
-                offset += 14;
             }
 
             _writer.WriteCode(Code.Data, "\n");
@@ -365,7 +364,7 @@ namespace ScrollerMapper.Processors
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.FrameDelay}");
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Count}");
-                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\tEnemiesArray+2+{enemy.Offset}");
+                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\t{enemy.Offset}\t\t;Offset from start of loading ptr");
                 _writer.WriteCode(Code.Data, $"\t\tdc.l\t\t{path.Offset}\t\t ;Offset from start of loading ptr ");
                 _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Period}");
 
@@ -541,7 +540,7 @@ namespace ScrollerMapper.Processors
             _writer.WriteWord((ushort)(_bobs.Count-1));
             foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
             {
-                _writer.WriteLong(bob.Value.Offset);
+                _writer.WriteOffset(ObjectType.Chip, bob.Value.Offset);
             }
             _writer.EndObject();
         }
@@ -576,7 +575,7 @@ namespace ScrollerMapper.Processors
                 _writer.WriteWord((ushort) (spriteOffsets.Count-1));
                 foreach (var offset in spriteOffsets)
                 {
-                    _writer.WriteLong(offset);
+                    _writer.WriteOffset(ObjectType.Chip, offset);
                 }
                 _writer.EndObject();
             }

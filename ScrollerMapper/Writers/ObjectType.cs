@@ -14,5 +14,7 @@
         Data,
         Fast,
         Chip,
+        Relocations,
+        Final
     }
 }

@@ -63,6 +63,16 @@ namespace ScrollerMapperTests.Services
         {
         }
 
+        public void WriteOffset(ObjectType objectType, uint offset)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void WriteRelocations()
+        {
+            throw new System.NotImplementedException();
+        }
+
         public uint GetCurrentOffset(ObjectType objectType)
         {
             throw new System.NotImplementedException();
@@ -72,5 +82,6 @@ namespace ScrollerMapperTests.Services
         {
             throw new System.NotImplementedException();
         }
+
     }
 }

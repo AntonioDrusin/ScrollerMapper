@@ -46,10 +46,9 @@ namespace ScrollerMapper.HeaderRenderers
             _writer.RestartObject(type, $"FileStructure{type}");
             foreach (var header in objectNames)
             {
-                _writer.WriteLong((uint) _writer.GetOffset(header));
+                _writer.WriteOffset(type, _writer.GetOffset(header));
             }
             _writer.EndObject();
         }
-
     }
 }

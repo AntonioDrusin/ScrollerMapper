@@ -25,6 +25,7 @@
         void WriteBlob(byte[] data);
         void WriteBlob(byte[] data, int count);
         void WriteCode(Code codeType, string code);
+        void WriteOffset(ObjectType objectType, uint offset);
         uint GetCurrentOffset(ObjectType objectType);
         uint GetOffset(string name);
     }

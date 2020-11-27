@@ -2,6 +2,8 @@
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using ScrollerMapper.StreamExtensions;
 
 namespace ScrollerMapper
@@ -40,8 +42,10 @@ namespace ScrollerMapper
 
         public void StartDiskFile(string diskFileName)
         {
+            _diskFileName = diskFileName;
             _chipFileName = GetFileNameFor(ObjectType.Chip, diskFileName);
             _fastFileName = GetFileNameFor(ObjectType.Fast, diskFileName);
+            _relocFileName = GetFileNameFor(ObjectType.Relocations, diskFileName);
 
             _diskChipWriter = new BinaryWriter(File.Create(_chipFileName));
             _diskFastWriter = new BinaryWriter(File.Create(_fastFileName));
@@ -49,6 +53,12 @@ namespace ScrollerMapper
 
         public void CompleteDiskFile()
         {
+            if (_relocations.Any())
+            {
+                WriteRelocations();
+                _relocations.Clear();
+            }
+
             if (_diskChipWriter != null)
             {
                 FlushAndClose(_diskChipWriter);
@@ -62,6 +72,24 @@ namespace ScrollerMapper
             }
 
             _offsets.Clear();
+
+            // Merge the file so it can be loaded at once.
+            using (var mergedFile = new BinaryWriter(File.Create(GetFileNameFor(ObjectType.Final, _diskFileName))))
+            {
+                var chipData = File.ReadAllBytes(_chipFileName);
+                mergedFile.Write(Encoding.ASCII.GetBytes("CHIP"));
+                mergedFile.Write(Endian.ConvertLong((uint) chipData.Length));
+                mergedFile.Write(chipData);
+                var fastData = File.ReadAllBytes(_fastFileName);
+                mergedFile.Write(Encoding.ASCII.GetBytes("FAST"));
+                mergedFile.Write(Endian.ConvertLong((uint)fastData.Length));
+                mergedFile.Write(fastData);
+                var relocationData = File.ReadAllBytes(_relocFileName);
+                mergedFile.Write(Encoding.ASCII.GetBytes("RELO"));
+                mergedFile.Write(Endian.ConvertLong((uint)relocationData.Length));
+                mergedFile.Write(relocationData);
+                mergedFile.Close();
+            }
         }
 
         private void FlushAndClose(BinaryWriter writer)
@@ -114,13 +142,14 @@ namespace ScrollerMapper
                     break;
                 case ObjectType.Fast:
                     _currentWriter = _diskFastWriter;
-                    
+
                     break;
                 default:
                     throw new NotSupportedException("Only chip and fast are supported with seek");
             }
+
             var offset = _offsets[name];
-            _currentWriter.Seek((int)offset, SeekOrigin.Begin);
+            _currentWriter.Seek((int) offset, SeekOrigin.Begin);
         }
 
         public uint GetOffset(string name)
@@ -172,7 +201,7 @@ namespace ScrollerMapper
                         var pos = _currentWriter.BaseStream.Position;
                         if (pos % 2 > 0)
                         {
-                            _currentWriter.Write((byte)0);
+                            _currentWriter.Write((byte) 0);
                         }
                     }
 
@@ -199,6 +228,54 @@ namespace ScrollerMapper
         public void WriteByte(byte data)
         {
             _currentWriter.Write(data);
+        }
+
+        private readonly List<Relocation> _relocations = new List<Relocation>();
+        private string _relocFileName;
+        private string _diskFileName;
+
+        public void WriteOffset(ObjectType destinationObjectType, uint destinationOffset)
+        {
+            if ((destinationOffset & 0x01) != 0)
+            {
+                throw new ConversionException("Offset for relocation is not even.");
+            }
+
+            var sourceOffset = (uint)_currentWriter.BaseStream.Position;
+
+            _relocations.Add(new Relocation
+            {
+                DestinationType = destinationObjectType,
+                SourceOffset = sourceOffset,
+                SourceType = _currentObject
+            });
+            WriteLong(destinationOffset);
+        }
+
+        public void WriteRelocations()
+        {
+            var relocFile = new BinaryWriter(File.Create(_relocFileName));
+            WriteRelocationList(relocFile, _relocations.Where(_ => _.SourceType == ObjectType.Chip).ToList());
+            WriteRelocationList(relocFile, _relocations.Where(_ => _.SourceType == ObjectType.Fast).ToList());
+            if (relocFile.BaseStream.Position > 5632)
+            {
+                throw new ConversionException("relocations longer than 1 track 5632 bytes");
+            }
+
+            relocFile.Close();
+        }
+
+        private void WriteRelocationList(BinaryWriter relocFile, List<Relocation> relocations)
+        {
+            relocFile.Write(Endian.ConvertWord((ushort) relocations.Count));
+
+            foreach (var relocation in relocations)
+            {
+                uint pointer = (uint) (relocation.DestinationType == ObjectType.Fast ? 1 : 0);
+                pointer = pointer | relocation.SourceOffset;
+
+                relocFile.Write(Endian.ConvertLong(pointer));
+            }
         }
 
         public uint GetCurrentOffset(ObjectType objectType)
@@ -311,10 +388,15 @@ namespace ScrollerMapper
                     break;
                 case ObjectType.Chip:
                     extension = "chip";
-                    folder = "disk";
                     break;
                 case ObjectType.Fast:
                     extension = "fast";
+                    break;
+                case ObjectType.Relocations:
+                    extension = "rel";
+                    break;
+                case ObjectType.Final:
+                    extension = "data";
                     folder = "disk";
                     break;
                 default:
@@ -329,5 +411,12 @@ namespace ScrollerMapper
         {
             return type.ToString();
         }
+    }
+
+    internal class Relocation
+    {
+        public ObjectType DestinationType { get; set; }
+        public uint SourceOffset { get; set; }
+        public ObjectType SourceType { get; set; }
     }
 }
