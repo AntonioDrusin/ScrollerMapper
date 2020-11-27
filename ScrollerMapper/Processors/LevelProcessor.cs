@@ -276,7 +276,7 @@ namespace ScrollerMapper.Processors
                     new EnemyInfo {Name = enemyKeyValue.Key, Index = index++, Offset = offset});
             }
 
-            _writer.WriteCode(Code.Data, "\n");
+            _writer.EndObject();
         }
 
         private void WriteEnemyComments()
@@ -352,28 +352,31 @@ namespace ScrollerMapper.Processors
             WriteWaveComments();
             _writer.WriteCode(Code.Normal, $"MaxActiveWaves\t\tequ\t{definition.MaxActiveWaves}");
             _writer.WriteCode(Code.Normal, $"MaxActiveEnemies\t\tequ\t{definition.MaxActiveEnemies}");
-            _writer.WriteCode(Code.Data, "\tsection\tdata");
-            _writer.WriteCode(Code.Data, "Waves:");
+            _writer.WriteCode(Code.Data, "; Waves");
+            _writer.WriteCode(Code.Data, "; final wave has a special WaveDelay of $ffff to mark the end");
+
+            _writer.StartObject(ObjectType.Fast, "Waves");
+
             foreach (var wavePair in definition.Waves)
             {
                 var wave = wavePair.Value;
                 var path = GetPathFor(wave.Path, wavePair.Key);
                 var enemy = GetEnemyFor(wave.Enemy, wavePair.Key);
 
-                _writer.WriteCode(Code.Data, $"; wave '{wavePair.Key}'");
-                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.FrameDelay}");
-                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.OnExistingWaves}");
-                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Count}");
-                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\t{enemy.Offset}\t\t;Offset from start of loading ptr");
-                _writer.WriteCode(Code.Data, $"\t\tdc.l\t\t{path.Offset}\t\t ;Offset from start of loading ptr ");
-                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.Period}");
-
-                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.StartX},{wave.StartY}");
-                _writer.WriteCode(Code.Data, $"\t\tdc.w\t\t{wave.StartXOffset},{wave.StartYOffset}");
+                _writer.WriteWord(wave.FrameDelay);
+                _writer.WriteWord(wave.OnExistingWaves);
+                _writer.WriteWord(wave.Count);
+                _writer.WriteOffset(ObjectType.Fast, enemy.Offset);
+                _writer.WriteOffset(ObjectType.Fast, path.Offset);
+                _writer.WriteWord(wave.Period);
+                _writer.WriteWord((ushort)wave.StartX);
+                _writer.WriteWord((ushort)wave.StartY);
+                _writer.WriteWord((ushort)wave.StartXOffset);
+                _writer.WriteWord((ushort)wave.StartYOffset);
             }
+            _writer.WriteWord(0xffff);
 
-            _writer.WriteCode(Code.Data, "; final wave has a special WaveDelay of $ffff to mark the end");
-            _writer.WriteCode(Code.Data, "\t\tdc.w\t\t$ffff\t\t");
+            _writer.EndObject();
         }
 
         private PathInfo GetPathFor(string pathName, string sourceName)
@@ -545,7 +548,7 @@ namespace ScrollerMapper.Processors
             _writer.EndObject();
         }
 
-        private readonly List<string> _fastHeaders = new List<string> {"BobPalette", "SpriteArray", "BobArray"};
+        private readonly List<string> _fastHeaders = new List<string> {"BobPalette", "SpriteArray", "BobArray", "Waves"};
 
         private void WriteLevelHeader()
         {

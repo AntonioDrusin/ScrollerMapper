@@ -134,14 +134,14 @@ namespace ScrollerMapper.DefinitionModels
     internal class WaveDefinition
     {
         public string Enemy { get; set; }
-        public int OnExistingWaves { get; set; }
-        public int FrameDelay { get; set; }
-        public int Count { get; set; } // Enemy Count
-        public int Period { get; set; }
-        public int StartX { get; set; }
-        public int StartY { get; set; }
-        public int StartXOffset { get; set; }
-        public int StartYOffset { get; set; }
+        public ushort OnExistingWaves { get; set; }
+        public ushort FrameDelay { get; set; }
+        public ushort Count { get; set; } // Enemy Count
+        public ushort Period { get; set; }
+        public short StartX { get; set; }
+        public short StartY { get; set; }
+        public short StartXOffset { get; set; }
+        public short StartYOffset { get; set; }
         public string Path { get; set; }
     }
 
