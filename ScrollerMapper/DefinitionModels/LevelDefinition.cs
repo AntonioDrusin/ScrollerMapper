@@ -11,6 +11,8 @@ namespace ScrollerMapper.DefinitionModels
         public Dictionary<string, EnemyDefinition> Enemies { get; set; }
         public Dictionary<string, WaveDefinition> Waves { get; set; }
         public Dictionary<string, PathDefinition> Paths { get; set; }
+        public EnemyFireDefinition EnemyFire { get; set; }
+
 
         public DataDefinition Data { get; set; }
         
@@ -177,5 +179,28 @@ namespace ScrollerMapper.DefinitionModels
         public string Waveform { get; set; }
         public int Frequency { get; set; } = 8000;
         public int Volume { get; set; } = 64;
+    }
+
+    internal class EnemyFireDefinition
+    {
+        public Dictionary<string, EnemyFireTypeDefinition> Types { get; set; } = new Dictionary<string, EnemyFireTypeDefinition>();
+        public DirectFireDefinition Direct { get; set; } = new DirectFireDefinition();
+
+    }
+
+    internal class EnemyFireTypeDefinition
+    {
+        public string Sound { get; set; }
+        public string Bob { get; set; }
+        public string Movement { get; set; }
+        public int Period { get; set; }
+    }
+
+    internal class DirectFireDefinition
+    {
+        public int Precision { get; set; }
+        public int SlowSpeed { get; set; }
+        public int NormalSpeed { get; set; }
+        public int FastSpeed { get; set; }
     }
 }

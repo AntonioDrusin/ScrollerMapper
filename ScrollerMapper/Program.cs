@@ -4,6 +4,7 @@ using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
 using CommandLine;
+using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Processors;
 
@@ -39,7 +40,8 @@ namespace ScrollerMapper
                             .WithServiceAllInterfaces(),
                         Component.For<MainConverter>(),
                         Component.For<Options>().Instance(o),
-                        Component.For<IWriter>().ImplementedBy<FileWriter>()
+                        Component.For<IWriter>().ImplementedBy<FileWriter>(),
+                        Component.For<ItemManager>().ImplementedBy<ItemManager>()
                     );
                     ExecuteConverter(container, o);
                 })

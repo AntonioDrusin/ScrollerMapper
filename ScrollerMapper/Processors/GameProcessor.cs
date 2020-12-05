@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ScrollerMapper.Converters;
+using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.HeaderRenderers;
 
@@ -13,16 +15,18 @@ namespace ScrollerMapper.Processors
         private readonly MusicConverter _musicConverter;
         private readonly HeaderRenderer _headerRenderer;
         private readonly IWriter _writer;
+        private readonly ItemManager _items;
 
         public GameProcessor(IEnumerable<IProcessor> processors, ImageConverter imageConverter, MusicConverter musicConverter, 
             HeaderRenderer headerRenderer,
-            IWriter writer)
+            IWriter writer, ItemManager items)
         {
             _processors = processors;
             _imageConverter = imageConverter;
             _musicConverter = musicConverter;
             _headerRenderer = headerRenderer;
             _writer = writer;
+            _items = items;
         }
 
         public void Process(GameDefinition definition)
@@ -92,10 +96,28 @@ namespace ScrollerMapper.Processors
 
                 var levelDefinition = level.FileName.FromInputFolder().ReadJsonFile<LevelDefinition>();
                 levelDefinition.Validate();
-                foreach (var processor in _processors)
+                List<IProcessor> processors = _processors.Select(_=>_).ToList();
+
+                while (processors.Count > 0)
                 {
+                    IProcessor processor;
+                    try
+                    {
+                        processor = processors.First(p =>
+                            p.RequiredTypes() == null || _items.HasAll(p.RequiredTypes()));
+                    }
+                    catch
+                    {
+                        var issues = string.Join("\n", processors.Select(p =>
+                            $"{p.GetType().Name} Cannot be processed, it depends on unresolved objects: {string.Join(",", p.RequiredTypes().Except(_items.AvailableTypes()))}")
+                            );
+                        throw new ConversionException(issues);
+                    }
+
                     processor.Process(levelDefinition);
+                    processors.Remove(processor);
                 }
+
 
                 var fastSize = _writer.GetCurrentOffset(ObjectType.Fast);
                 maxFastSize = Math.Max(fastSize, maxFastSize);

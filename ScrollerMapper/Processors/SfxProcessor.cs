@@ -1,24 +1,40 @@
 ﻿using System.Collections.Generic;
 using NAudio.Wave;
+using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 
-namespace ScrollerMapper.SfxRenderers
+namespace ScrollerMapper.Processors
 {
-    internal class SfxRenderer
+    internal class SfxProcessor : IProcessor
     {
         private readonly IWriter _writer;
         private const int BufferSize = 128;
         private readonly Dictionary<string, int> _waveOffsets = new Dictionary<string, int>();
-        private readonly Dictionary<string, uint> _soundOffsets = new Dictionary<string, uint>();
         private readonly Dictionary<string, int> _waveLengths = new Dictionary<string, int>();
         private const double TicksPerSecond = 3546895.0; // HWM PAL
-
-        public SfxRenderer(IWriter writer)
+        private readonly ItemManager _items;
+        
+        public SfxProcessor(IWriter writer, ItemManager items)
         {
             _writer = writer;
+            _items = items;
         }
 
-        public void Render(SfxDefinition sfxDefinition)
+        public void Process(LevelDefinition definition)
+        {
+            if (definition.Sfx != null)
+            {
+                Render(definition.Sfx);
+            }
+
+        }
+
+        public IEnumerable<string> RequiredTypes()
+        {
+            return null;
+        }
+
+        private void Render(SfxDefinition sfxDefinition)
         {
             var inBuffer = new float [BufferSize];
             var outBuffer = new byte[BufferSize];
@@ -47,8 +63,8 @@ namespace ScrollerMapper.SfxRenderers
             foreach (var soundTuple in sfxDefinition.Sounds)
             {
                 var sound = soundTuple.Value;
-                _soundOffsets.Add(soundTuple.Key, _writer.GetCurrentOffset(ObjectType.Data));
-
+                _items.Add(ItemTypes.Sound, soundTuple.Key, _writer.GetCurrentOffset(ObjectType.Data));
+                
                 var startOffset = (ushort) _waveOffsets[sound.Waveform];
                 var period = (ushort) (TicksPerSecond / sound.Frequency);
                 var length = (ushort) (_waveLengths[sound.Waveform] / 2);
@@ -101,17 +117,6 @@ namespace ScrollerMapper.SfxRenderers
 
             _writer.EndObject();
         }
-
-        public uint GetSoundLutOffset(string soundName)
-        {
-            try
-            {
-                return _soundOffsets[soundName];
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new KeyNotFoundException("Cannot find sound: " + soundName);
-            }
-        }
+        
     }
 }

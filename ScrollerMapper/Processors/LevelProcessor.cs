@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using ScrollerMapper.BitplaneRenderers;
@@ -11,7 +8,6 @@ using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.HeaderRenderers;
 using ScrollerMapper.PaletteRenderers;
-using ScrollerMapper.SfxRenderers;
 using ScrollerMapper.Transformers;
 using ImageConverter = ScrollerMapper.Converters.ImageConverter;
 
@@ -27,13 +23,10 @@ namespace ScrollerMapper.Processors
         private readonly BobConverter _bobConverter;
         private readonly IPaletteRenderer _paletteRenderer;
         private readonly SpriteRenderer _spriteRenderer;
-        private readonly SfxRenderer _sfxRenderer;
         private readonly HeaderRenderer _headerRenderer;
         private readonly IWriter _writer;
-        private readonly Dictionary<string, BobInfo> _bobs;
-        private int _bobIndex;
-        private Dictionary<string, PathInfo> _paths;
-        private Dictionary<string, EnemyInfo> _enemies;
+        private readonly ItemManager _items;
+
         private int _scoreboardHeight;
         private LevelDefinition _definition;
 
@@ -43,19 +36,17 @@ namespace ScrollerMapper.Processors
             BobConverter bobConverter,
             IPaletteRenderer paletteRenderer,
             SpriteRenderer spriteRenderer,
-            SfxRenderer sfxRenderer,
             HeaderRenderer headerRenderer,
-            IWriter writer)
+            IWriter writer, ItemManager items)
         {
             _tiledConverter = tiledConverter;
             _imageConverter = imageConverter;
             _bobConverter = bobConverter;
             _paletteRenderer = paletteRenderer;
             _spriteRenderer = spriteRenderer;
-            _sfxRenderer = sfxRenderer;
             _headerRenderer = headerRenderer;
             _writer = writer;
-            _bobs = new Dictionary<string, BobInfo>();
+            _items = items;
         }
 
         public void Process(LevelDefinition definition)
@@ -70,12 +61,7 @@ namespace ScrollerMapper.Processors
             {
                 ConvertTiles(_definition);
             }
-
-            if (_definition.Sfx != null)
-            {
-                _sfxRenderer.Render(_definition.Sfx);
-            }
-
+            
             var bobPalette = _definition.BobPaletteFile.FromInputFolder().LoadIndexedBitmap();
 
             if (_definition.SpritePaletteFile != null)
@@ -124,7 +110,8 @@ namespace ScrollerMapper.Processors
                         _writer.WriteCode(Code.Data,
                             $"\tdc.w\t{shot.Vx}, {shot.Hit}, {shot.MaxCount}, {shot.Cooldown}\t;vx,hit,maxCount,cooldDown");
 
-                        var soundOffset = _sfxRenderer.GetSoundLutOffset(shot.Sound);
+
+                        var soundOffset = _items.Get(ItemTypes.Sound, shot.Sound, "Player shots").Offset;
 
                         _writer.WriteCode(Code.Data, $"\tdc.w\t{soundOffset}\t; sound Offset");
                         if (shot.MaxCount > maxCount) maxCount = shot.MaxCount;
@@ -150,9 +137,6 @@ namespace ScrollerMapper.Processors
                     _writer.WriteCode(Code.Normal,
                         $"PLAYER_INVULNDURATION\t\tequ\t{_definition.Player.Death.InvulnerabilityDuration}");
 
-                    _writer.StartObject(ObjectType.Data, "PlayerDeathPath");
-                    WritePathData(_definition.Player.Death.Path);
-                    _writer.EndObject();
                 }
             }
             else if (_definition.Player != null)
@@ -178,19 +162,7 @@ namespace ScrollerMapper.Processors
                 var scoreboardInfo = _imageConverter.ConvertAll("Scoreboard", _definition.Panel.Scoreboard);
                 _scoreboardHeight = scoreboardInfo.Height;
             }
-
-            // Move all of this in its own?
-            WriteBobComments();
-
-            RenderBobPalette(bobPalette.Palette);
-
-            foreach (var bob in _definition.Bobs)
-            {
-                ConvertBobToDisk(bob.Key, bob.Value, _definition, bobPalette);
-            }
-
-            _writer.WriteCode(Code.Normal, "\n\n");
-
+            
             _writer.WriteCode(Code.Normal, $"LEVEL_WIDTH\t\tequ\t\t{_definition.Level.Width}");
             _writer.WriteCode(Code.Normal,
                 $"FXP_SHIFT\t\tequ\t\t{_definition.FixedPointBits}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
@@ -198,11 +170,17 @@ namespace ScrollerMapper.Processors
 
             WriteMapLookup();
             WriteMainLookup();
-            WriteEnemies(_definition);
-            WritePaths(_definition.Paths);
             WriteWaves(_definition);
             WriteBobList();
             CompleteStructureParts();
+        }
+
+        public IEnumerable<string> RequiredTypes()
+        {
+            yield return ItemTypes.Bob;
+            yield return ItemTypes.Path;
+            yield return ItemTypes.Enemy;
+            yield return ItemTypes.Sound;
         }
 
         private void WriteShotStructure()
@@ -220,15 +198,7 @@ namespace ScrollerMapper.Processors
 ");
         }
 
-        private void ConvertBobToDisk(string name, BobDefinition bob, LevelDefinition definition, Bitmap bobPalette)
-        {
-            var offset = _writer.GetCurrentOffset(ObjectType.Chip);
 
-            _bobConverter.ConvertBob(name, bob, definition.BobPlaneCount, bobPalette.Palette,
-                _definition.BobPaletteFlip0AndLast, Destination.Disk);
-
-            _bobs.Add(name, new BobInfo {Index = _bobIndex++, Name = name, Offset = offset});
-        }
 
         private void ConvertTiles(LevelDefinition definition)
         {
@@ -238,114 +208,6 @@ namespace ScrollerMapper.Processors
             }
         }
 
-        private void WriteEnemies(LevelDefinition definition)
-        {
-            WriteEnemyComments();
-            _writer.StartObject(ObjectType.Fast, "Enemies");
-            _enemies = new Dictionary<string, EnemyInfo>();
-            var index = 0;
-            foreach (var enemyKeyValue in definition.Enemies)
-            {
-                BobInfo bobForEnemy;
-                var enemy = enemyKeyValue.Value;
-                try
-                {
-                    bobForEnemy = _bobs[enemy.Bob];
-                }
-                catch (KeyNotFoundException)
-                {
-                    throw new ConversionException($"Bob '{enemy.Bob}' for enemy '{enemyKeyValue.Key}' was not found.");
-                }
-
-                var offset = _writer.GetCurrentOffset(ObjectType.Fast);
-
-                _writer.WriteOffset(ObjectType.Chip, bobForEnemy.Offset);
-                _writer.WriteWord(enemy.FrameDelay);
-                _writer.WriteWord(enemy.Hp);
-                
-                var pointString = enemy.Points.ToString("D8");
-                foreach (var s in Enumerable.Range(0, 4).Select(i => byte.Parse($"{pointString.Substring(i * 2, 2)}", NumberStyles.HexNumber)))
-                {
-                    _writer.WriteByte(s);
-                }
-
-                var soundOffset = (ushort)_sfxRenderer.GetSoundLutOffset(enemy.ExplosionSound);
-                _writer.WriteWord(soundOffset);
-
-                _enemies.Add(enemyKeyValue.Key,
-                    new EnemyInfo {Name = enemyKeyValue.Key, Index = index++, Offset = offset});
-            }
-
-            _writer.EndObject();
-        }
-
-        private void WriteEnemyComments()
-        {
-            _writer.WriteCode(Code.Normal, @"
-** Structure for Enemies
-** EnemyBobOffset is an offset in bytes from the Enemies label
-    structure   EnemyStructure, 0
-    long        EnemyBobPtr_l
-    word        EnemyPeriod_w       ; Period in frames between switching bobs
-    word        EnemyHp_w       ; HP for this enemy
-    long        EnemyPoints_l       ; BCD coded points for this enemy
-    word        EnemySound_w
-    label       ENEMY_STRUCT_SIZE
-");
-        }
-
-        private void WritePaths(Dictionary<string, PathDefinition> definitionPaths)
-        {
-            _paths = new Dictionary<string, PathInfo>();
-            WritePathComments();
-
-            _writer.StartObject(ObjectType.Fast, "Paths");
-            var index = 0;
-            foreach (var path in definitionPaths)
-            {
-                var currentOffset = _writer.GetCurrentOffset(ObjectType.Fast);
-                _paths.Add(path.Key, new PathInfo {Name = path.Key, Offset = currentOffset, Index = index++});
-                WritePathData(path.Value);
-            }
-
-            _writer.EndObject();
-        }
-
-        private void WritePathData(PathDefinition path)
-        {
-            var firstTransformer = new SmoothInputPathTransformer();
-            var secondTransformer = new OutputPathCoalesceTransformer();
-            var finalPath = firstTransformer.TransformPath(path.Steps);
-            finalPath = secondTransformer.GroupPath(finalPath);
-
-            foreach (var step in finalPath)
-            {
-                _writer.WriteWord(step.FrameCount);
-                _writer.WriteWord((ushort) step.VelocityX);
-                _writer.WriteWord((ushort) step.VelocityY);
-            }
-
-            // Termination
-            _writer.WriteWord(0);
-            _writer.WriteWord(0);
-            _writer.WriteWord(0);
-        }
-
-        private void WritePathComments()
-        {
-            _writer.WriteCode(Code.Normal, @"
-** Structure for a path
-** The structure is repeated until the FrameCount is 0. That is the end of the path. Enemy will disappear.
-** Each path is formed by a number of these structure until framecount is 0.
-
-    structure       PathStructure, 0
-    word            PathFrameCount_w
-    word            PathVX_w
-    word            PathVY_w
-    label           PATH_STRUCT_SIZE
-
-");
-        }
 
         private void WriteWaves(LevelDefinition definition)
         {
@@ -360,8 +222,8 @@ namespace ScrollerMapper.Processors
             foreach (var wavePair in definition.Waves)
             {
                 var wave = wavePair.Value;
-                var path = GetPathFor(wave.Path, wavePair.Key);
-                var enemy = GetEnemyFor(wave.Enemy, wavePair.Key);
+                var path = _items.Get(ItemTypes.Path, wave.Path, wavePair.Key);
+                var enemy = _items.Get(ItemTypes.Enemy, wave.Enemy, wavePair.Key);
 
                 _writer.WriteWord(wave.FrameDelay);
                 _writer.WriteWord(wave.OnExistingWaves);
@@ -378,37 +240,7 @@ namespace ScrollerMapper.Processors
 
             _writer.EndObject();
         }
-
-        private PathInfo GetPathFor(string pathName, string sourceName)
-        {
-            PathInfo path;
-            try
-            {
-                path = _paths[pathName];
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new ConversionException($"Cannot find path '{pathName}' for '{sourceName}'");
-            }
-
-            return path;
-        }
-
-        private EnemyInfo GetEnemyFor(string enemyName, string sourceName)
-        {
-            EnemyInfo enemy;
-            try
-            {
-                enemy = _enemies[enemyName];
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new ConversionException($"Cannot find enemy '{enemyName}' for '{sourceName}'");
-            }
-
-            return enemy;
-        }
-
+        
         private void WriteWaveComments()
         {
             _writer.WriteCode(Code.Normal, @"
@@ -428,53 +260,7 @@ namespace ScrollerMapper.Processors
     label       WAVE_STRUCT_SIZE
 ");
         }
-
-        private void WriteBobComments()
-        {
-            _writer.WriteCode(Code.Normal, "");
-            _writer.WriteCode(Code.Normal, "** Structure of BOBS ");
-            _writer.WriteCode(Code.Normal, "** WordWidth  WORD ");
-            _writer.WriteCode(Code.Normal, "** BobCount WORD ");
-            _writer.WriteCode(Code.Normal, "**  ");
-            _writer.WriteCode(Code.Normal, "** BobCount frames follow: ");
-            _writer.WriteCode(Code.Normal, "** FrameByteOffset WORD ; from the beginning of the file ");
-            _writer.WriteCode(Code.Normal, "** MaskByteOffset WORD ; from the beginning of the file ");
-            _writer.WriteCode(Code.Normal, "** Lines WORD ; how many lines is this frame made out of ");
-            _writer.WriteCode(Code.Normal, "** YAdjustment WORD ; word to add to Y when drawing ");
-            _writer.WriteCode(Code.Normal, "**  ");
-            _writer.WriteCode(Code.Normal, "**  Binary Blob data follows ");
-            _writer.WriteCode(Code.Normal, "**  @ FrameByteOffset interleaved planes with the data");
-            _writer.WriteCode(Code.Normal,
-                "**  @ MaskByteOffset interleaved planes with the data (same mask is repeated for each plane)");
-            _writer.WriteCode(Code.Normal, @"
-    structure   BobsStructure, 0
-    word        BobsWordWidth_w
-    word        BobsCount_w 
-    label       BOBS_STRUCT_SIZE
-
-    structure   BCelStructure, 0 
-    long        BCelPlaneOffset_l        ; Long, so upon load you can turn it into a pointer
-    long        BCelMaskOffset_l         ; Long, so upon load you can turn this into a pointer
-    word        BCelHeight_w
-    word        BCelYAdjust_w
-    word        BCelDModulo_w            ; Destination modulo for bob (set to 0, you need to initialize this)
-    word        BCelBlitSize_w           ; This is pre-calculated    
-    label       BCEL_STRUCT_SIZE
-
-");
-            _writer.WriteCode(Code.Normal, "");
-        }
-
-        private void RenderBobPalette(ColorPalette bitmapPalette)
-        {
-            var palette = new PaletteTransformer("BobPalette", bitmapPalette, _definition.BobPlaneCount.PowerOfTwo());
-            if (_definition.BobPaletteFlip0AndLast)
-            {
-                palette.Flip(0, palette.Length - 1);
-            }
-
-            _paletteRenderer.Render(palette, true);
-        }
+        
 
         private void WriteMapLookup()
         {
@@ -539,11 +325,12 @@ namespace ScrollerMapper.Processors
 
         private void WriteBobList()
         {
+            var bobs = _items.Get(ItemTypes.Bob);
             _writer.StartObject(ObjectType.Fast, "BobArray");
-            _writer.WriteWord((ushort)(_bobs.Count-1));
-            foreach (var bob in _bobs.OrderBy(b => b.Value.Index))
+            _writer.WriteWord((ushort)(bobs.Count-1));
+            foreach (var bob in bobs.OrderBy(b => b.Index))
             {
-                _writer.WriteOffset(ObjectType.Chip, bob.Value.Offset);
+                _writer.WriteOffset(ObjectType.Chip, bob.Offset);
             }
             _writer.EndObject();
         }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
@@ -36,6 +37,11 @@ namespace ScrollerMapper.Processors
             {
                 _writer.WriteCode(Code.Normal, "COPPERSHADE=\t\t0\n\n");
             }
+        }
+
+        public IEnumerable<string> RequiredTypes()
+        {
+            return null;
         }
 
         private void OutputShadeLookup()
