@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using ScrollerMapper.Converters.Infos;
@@ -68,7 +67,7 @@ namespace ScrollerMapper.Processors
     structure   EnemyStructure, 0
     long        EnemyBobPtr_l
     word        EnemyPeriod_w       ; Period in frames between switching bobs
-    word        EnemyHp_w       ; HP for this enemy
+    word        EnemyHp_w           ; HP for this enemy
     long        EnemyPoints_l       ; BCD coded points for this enemy
     word        EnemySound_w
     label       ENEMY_STRUCT_SIZE

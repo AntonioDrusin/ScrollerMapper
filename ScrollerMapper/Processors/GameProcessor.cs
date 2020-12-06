@@ -86,6 +86,8 @@ namespace ScrollerMapper.Processors
 
         private void ProcessAllLevels(GameDefinition definition)
         {
+            List<string> levelHeaders = new List<string> {"BobPalette", "SpriteArray", "BobArray", "Waves"};
+
             uint maxFastSize = 0;
             uint maxChipSize = 0;
 
@@ -93,10 +95,11 @@ namespace ScrollerMapper.Processors
             {
                 var level = levelTuple.Value;
                 _writer.StartDiskFile(levelTuple.Key);
+                _headerRenderer.WriteHeader("Level", ObjectType.Fast, levelHeaders);
 
                 var levelDefinition = level.FileName.FromInputFolder().ReadJsonFile<LevelDefinition>();
                 levelDefinition.Validate();
-                List<IProcessor> processors = _processors.Select(_=>_).ToList();
+                List<IProcessor> processors = _processors.OrderBy(_=>_.GetType().Name).ToList();
 
                 while (processors.Count > 0)
                 {
@@ -113,7 +116,7 @@ namespace ScrollerMapper.Processors
                             );
                         throw new ConversionException(issues);
                     }
-
+                    Console.WriteLine($"PROCESSING {processor.GetType().Name}");
                     processor.Process(levelDefinition);
                     processors.Remove(processor);
                 }
@@ -124,10 +127,12 @@ namespace ScrollerMapper.Processors
                 var chipSize = _writer.GetCurrentOffset(ObjectType.Chip);
                 maxChipSize = Math.Max(chipSize, maxChipSize);
 
+                _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Fast, levelHeaders);
                 _writer.CompleteDiskFile();
             }
             _writer.WriteCode(Code.Normal, $"LEVEL_FAST_SIZE\tequ\t{maxFastSize}");
             _writer.WriteCode(Code.Normal, $"LEVEL_CHIP_SIZE\tequ\t{maxChipSize}");
         }
+
     }
 }

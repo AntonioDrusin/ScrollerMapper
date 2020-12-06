@@ -46,14 +46,14 @@ namespace ScrollerMapper.Processors
         private void WriteSounds(SfxDefinition sfxDefinition)
         {
             _writer.WriteCode(Code.Normal, @"
-                ** structure for audio
-                structure   SoundStructure, 0
-                word        SoundStartOffset_w       ; Offset from the fx pack where to start sound
-                word        SoundPeriod_w            ; 
-                word        SoundLength_w   
-                byte        SoundVolume_b            ; Audio volume
-                byte        SoundUnused_b            ;
-                label       SOUND_STRUCTURE_SIZE
+    ** structure for audio
+    structure   SoundStructure, 0
+    word        SoundStartOffset_w       ; Offset from the fx pack where to start sound
+    word        SoundPeriod_w            ; 
+    word        SoundLength_w   
+    byte        SoundVolume_b            ; Audio volume
+    byte        SoundUnused_b            ;
+    label       SOUND_STRUCTURE_SIZE
             ");
 
             _writer.StartObject(ObjectType.Data, "sounds");

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using ScrollerMapper.Processors;
 
 namespace ScrollerMapper.DefinitionModels
 {
@@ -130,7 +131,7 @@ namespace ScrollerMapper.DefinitionModels
         public int Points { get; set; }
         public ushort FrameDelay { get; set; }
         public ushort Hp { get; set; } = 2;
-        public string ExplosionSound { get; set; }
+        public string ExplosionSound { get; set; } 
     }
 
     internal class WaveDefinition
@@ -145,6 +146,7 @@ namespace ScrollerMapper.DefinitionModels
         public short StartXOffset { get; set; }
         public short StartYOffset { get; set; }
         public string Path { get; set; }
+        public string Fire { get; set; }
     }
 
     internal class PathDefinition
@@ -192,15 +194,14 @@ namespace ScrollerMapper.DefinitionModels
     {
         public string Sound { get; set; }
         public string Bob { get; set; }
-        public string Movement { get; set; }
+        public EnemyFireMovements Movement { get; set; }
         public int Period { get; set; }
     }
 
     internal class DirectFireDefinition
     {
-        public int Precision { get; set; }
         public int SlowSpeed { get; set; }
         public int NormalSpeed { get; set; }
-        public int FastSpeed { get; set; }
+        public double FastSpeed { get; set; }
     }
 }
