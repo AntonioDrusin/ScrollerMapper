@@ -196,6 +196,7 @@ namespace ScrollerMapper.DefinitionModels
         public string Bob { get; set; }
         public EnemyFireMovements Movement { get; set; }
         public int Period { get; set; }
+        public int Speed { get; set; }
     }
 
     internal class DirectFireDefinition

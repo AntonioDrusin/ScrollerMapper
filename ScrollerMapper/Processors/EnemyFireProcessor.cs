@@ -7,7 +7,8 @@ namespace ScrollerMapper.Processors
 {
     internal enum EnemyFireMovements
     {
-        SlowDirect = 1,
+        AtPlayer = 1,
+        SlowDirect,
         NormalDirect,
         FastDirect,
     }
@@ -39,6 +40,7 @@ namespace ScrollerMapper.Processors
                 _writer.WriteWord((ushort) _items.Get(ItemTypes.Sound, fire.Sound, fireName).Offset);
                 _writer.WriteWord((ushort) fire.Movement);
                 _writer.WriteWord((ushort) fire.Period);
+                _writer.WriteWord((ushort) fire.Speed);
                 var bob = _items.Get(ItemTypes.Bob, fire.Bob, fireName);
                 _writer.WriteOffset(ObjectType.Chip, bob.Offset);
                 _items.Add(ItemTypes.EnemyFire, fireName, offset);
@@ -60,11 +62,14 @@ namespace ScrollerMapper.Processors
                 _writer.WriteCode(Code.Normal, $"FIREMOV_{name}\tequ\t{value}");
             }
 
+            _writer.WriteCode(Code.Normal, $"FIRE_LOOKUP_PRECISION\tequ\t9");
+
             _writer.WriteCode(Code.Normal, @"
     structure FireStructure, 0
     word    FireSoundLUT_w
     word    FireMovement_w
     word    FirePeriod_w
+    word    FireSpeed_w
     long    FireBobPtr_l
     label   FIRE_STRUCT_SIZE
 ");
