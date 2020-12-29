@@ -95,7 +95,6 @@ namespace ScrollerMapper
         public void Convert()
         {
             var definition = _options.InputFile.ReadJsonFile<GameDefinition>();
-            definition.Validate();
             _gameProcessor.Process(definition);
         }
     }

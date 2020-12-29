@@ -6,34 +6,34 @@ namespace ScrollerMapper.DefinitionModels
 {
     internal class LevelDefinition
     {
-        public Dictionary<string, TiledTileDefinition> Tiles { get; set; }
-        public Dictionary<string, ImageDefinition> Images { get; set; }
-        public Dictionary<string, BobDefinition> Bobs { get; set; }
-        public Dictionary<string, EnemyDefinition> Enemies { get; set; }
-        public Dictionary<string, WaveDefinition> Waves { get; set; }
-        public Dictionary<string, PathDefinition> Paths { get; set; }
-        public EnemyFireDefinition EnemyFire { get; set; }
-
-
-        public DataDefinition Data { get; set; }
+        public Dictionary<string, TiledTileDefinition> Tiles;
+        public Dictionary<string, ImageDefinition> Images;
+        public Dictionary<string, BobDefinition> Bobs;
+        public Dictionary<string, EnemyDefinition> Enemies;
+        public Dictionary<string, WaveDefinition> Waves;
+        public Dictionary<string, PathDefinition> Paths;
+        public EnemyFireDefinition EnemyFire;
+        public List<BonusDefinition> Bonuses = new List<BonusDefinition>();
         
-        public BackgroundDefinition Background { get; set; }
-        public PanelDefinition Panel { get; set; }
-        public int BobPlaneCount { get; set; }
-        public string BobPaletteFile { get; set; }
-        public bool BobPaletteFlip0AndLast { get; set; } = false;
-        public string SpritePaletteFile { get; set; }
-        public PlayerDefinition Player { get; set; }
-        public int MaxActiveWaves { get; set; }
-        public int MaxActiveEnemies { get; set; }
-        public int MainVerticalBorder { get; set; } = 32;
-        public int MainHorizontalBorder { get; set; } = 32;
-
-        public SfxDefinition Sfx { get; set; }
+        public DataDefinition Data;
         
-        [DefaultValue(4)] public int FixedPointBits { get; set; } = 4;
+        public BackgroundDefinition Background;
+        public PanelDefinition Panel;
+        public int BobPlaneCount;
+        public string BobPaletteFile;
+        public bool BobPaletteFlip0AndLast = false;
+        public string SpritePaletteFile;
+        public PlayerDefinition Player;
+        public int MaxActiveWaves;
+        public int MaxActiveEnemies;
+        public int MainVerticalBorder = 32;
+        public int MainHorizontalBorder = 32;
 
-        public LevelDetailsDefinition Level { get; set; }
+        public SfxDefinition Sfx;
+
+        [DefaultValue(4)] public int FixedPointBits = 4;
+
+        public LevelDetailsDefinition Level;
 
         public void Validate()
         {
@@ -41,22 +41,27 @@ namespace ScrollerMapper.DefinitionModels
             {
                 throw new ConversionException("'bobs' must be defined.");
             }
-            if (Level== null)
+
+            if (Level == null)
             {
                 throw new ConversionException("'level' must be defined.");
             }
+
             if (Player == null)
             {
                 throw new ConversionException("'player' must be defined.");
             }
+
             if (Waves == null)
             {
                 throw new ConversionException("'waves' must be defined.");
             }
+
             if (Paths == null)
             {
                 throw new ConversionException("'paths' must be defined.");
             }
+
             if (Enemies == null)
             {
                 throw new ConversionException("'enemies' must be defined.");
@@ -66,143 +71,147 @@ namespace ScrollerMapper.DefinitionModels
 
     internal class DataDefinition
     {
-        public List<SpriteDefinition> Sprites { get; set; }
+        public List<SpriteDefinition> Sprites;
     }
 
 
     internal class BackgroundDefinition
     {
-        public CopperShadeDefinition CopperShade { get; set; }
+        public CopperShadeDefinition CopperShade;
     }
 
     internal class CopperShadeDefinition
     {
-        public ushort[] Colors { get; set; }
-        public bool Flicker { get; set; } = false;
+        public ushort[] Colors;
+        public bool Flicker = false;
     }
 
     internal class LevelDetailsDefinition
     {
-        public int Width { get; set; } = 1024;
+        public int Width = 1024;
     }
-   
+
     internal class PanelDefinition
     {
-        public ImageDefinition Font { get; set; }
-        public ImageDefinition Scoreboard { get; set; }
-        public MapDefinition Map { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
+        public ImageDefinition Font;
+        public ImageDefinition Scoreboard;
+        public MapDefinition Map;
+        public int X;
+        public int Y;
     }
 
     internal class MapDefinition
     {
-        public int X { get; set; }
-        public int Y { get; set; }
-        public int Width { get; set; }
-        public int Height { get; set; }
+        public int X;
+        public int Y;
+        public int Width;
+        public int Height;
     }
 
     internal class TiledTileDefinition
     {
-        public string TiledFile { get; set; }
-        public int PlaneCount { get; set; }
+        public string TiledFile;
+        public int PlaneCount;
     }
 
     internal class ImageDefinition
     {
-        public string ImageFile { get; set; }
-        public int PlaneCount { get; set; }
+        public string ImageFile;
+        public int PlaneCount;
     }
 
     internal class BobDefinition
     {
-        public string ImageFile { get; set; }
-        public int Width { get; set; }
-        public int? Height { get; set; }
-        public int? StartX { get; set; }
-        public int? StartY { get; set; }
-        public int? Count { get; set; }
+        public string ImageFile;
+        public int Width;
+        public int? Height;
+        public int? StartX;
+        public int? StartY;
+        public int? Count;
     }
 
     internal class EnemyDefinition
     {
-        public string Bob { get; set; }
-        public int Points { get; set; }
-        public ushort FrameDelay { get; set; }
-        public ushort Hp { get; set; } = 2;
-        public string ExplosionSound { get; set; } 
+        public string Bob;
+        public int Points;
+        public ushort FrameDelay;
+        public ushort Hp = 2;
+        public string ExplosionSound;
     }
 
     internal class WaveDefinition
     {
-        public string Enemy { get; set; }
-        public ushort OnExistingWaves { get; set; }
-        public ushort FrameDelay { get; set; }
-        public ushort Count { get; set; } // Enemy Count
-        public ushort Period { get; set; }
-        public short StartX { get; set; }
-        public short StartY { get; set; }
-        public short StartXOffset { get; set; }
-        public short StartYOffset { get; set; }
-        public string Path { get; set; }
-        public string Fire { get; set; }
+        public string Enemy;
+        public ushort OnExistingWaves;
+        public ushort FrameDelay;
+        public ushort Count; // Enemy Count
+        public ushort Period;
+        public short StartX;
+        public short StartY;
+        public short StartXOffset;
+        public short StartYOffset;
+        public string Path;
+        public string Fire;
     }
 
     internal class PathDefinition
     {
-        public string Mode { get; set; } = "v";
-        public List<PathStepDefinition> Steps { get; set; } = new List<PathStepDefinition>();
+        public string Mode = "v";
+        public List<PathStepDefinition> Steps = new List<PathStepDefinition>();
     }
 
     internal class PathStepDefinition
     {
-        public string Mode { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
-        public int F { get; set; }
-        public int In { get; set; }
-        public int Out { get; set; }
+        public string Mode;
+        public int X;
+        public int Y;
+        public int F;
+        public int In;
+        public int Out;
     }
 
     internal class SfxDefinition
     {
-        public Dictionary<string, WaveformDefinition> Waveforms { get; set; } = new Dictionary<string, WaveformDefinition>();
-        public Dictionary<string, SoundDefinition> Sounds { get; set; } = new Dictionary<string, SoundDefinition>();
+        public Dictionary<string, WaveformDefinition> Waveforms = new Dictionary<string, WaveformDefinition>();
+        public Dictionary<string, SoundDefinition> Sounds = new Dictionary<string, SoundDefinition>();
     }
 
     internal class WaveformDefinition
     {
-        public string SoundFile { get; set; }
+        public string SoundFile;
     }
 
     internal class SoundDefinition
     {
-        public string Waveform { get; set; }
-        public int Frequency { get; set; } = 8000;
-        public int Volume { get; set; } = 64;
+        public string Waveform;
+        public int Frequency = 8000;
+        public int Volume = 64;
     }
 
     internal class EnemyFireDefinition
     {
-        public Dictionary<string, EnemyFireTypeDefinition> Types { get; set; } = new Dictionary<string, EnemyFireTypeDefinition>();
-        public DirectFireDefinition Direct { get; set; } = new DirectFireDefinition();
-
+        public Dictionary<string, EnemyFireTypeDefinition> Types = new Dictionary<string, EnemyFireTypeDefinition>();
+        public DirectFireDefinition Direct = new DirectFireDefinition();
     }
 
     internal class EnemyFireTypeDefinition
     {
-        public string Sound { get; set; }
-        public string Bob { get; set; }
-        public EnemyFireMovements Movement { get; set; }
-        public int Period { get; set; }
-        public int Speed { get; set; }
+        public string Sound;
+        public string Bob;
+        public EnemyFireMovements Movement;
+        public int Period;
+        public int Speed;
     }
 
     internal class DirectFireDefinition
     {
-        public int SlowSpeed { get; set; }
-        public int NormalSpeed { get; set; }
-        public double FastSpeed { get; set; }
+        public int SlowSpeed;
+        public int NormalSpeed;
+        public double FastSpeed;
+    }
+
+    internal class BonusDefinition
+    {
+        public string Bob;
     }
 }

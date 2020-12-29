@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using ScrollerMapper.Converters;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
 
@@ -8,7 +9,7 @@ namespace ScrollerMapper.BitplaneRenderers
 {
     internal interface IBobRenderer
     {
-        void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, bool colorFlip, Destination destination = Destination.Executable);
+        void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, BobMode colorFlip, Destination destination = Destination.Executable);
     }
 
     internal class BinaryBobRenderer : IBobRenderer
@@ -30,12 +31,12 @@ namespace ScrollerMapper.BitplaneRenderers
         // 1. color 0 becomes color 15
         // 1. color 15 becomes color 0
         // 1. all of color 15 are now transparent
-        public void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, bool colorFlip, Destination destination = Destination.Executable)
+        public void Render(string name, Bitmap bitmap, BobDefinition definition, int planeCount, BobMode colorFlip, Destination destination = Destination.Executable)
         {
             _definition = definition;
             _planeCount = planeCount;
             _bobWordWidth = (_definition.Width / 8 + 1) / 2;
-            _colorFlip = colorFlip;
+            _colorFlip = colorFlip == BobMode.ColorFlip;
 
             var width = definition.Width;
             if (width % 8 != 0)
@@ -132,14 +133,18 @@ namespace ScrollerMapper.BitplaneRenderers
                     i++;
                 }
 
-                bobX++;
-                if (bobX >= maxXBobs)
+                if (i < numTiles)
                 {
-                    bobY++;
-                    if (bobY >= maxYBobs) throw new ConversionException($"Converting {_definition.ImageFile} reached the end of the image trying to get {numTiles} tiles.");
-                    bobX = 0;
+                    bobX++;
+                    if (bobX >= maxXBobs)
+                    {
+                        bobY++;
+                        if (bobY >= maxYBobs)
+                            throw new ConversionException(
+                                $"Converting {_definition.ImageFile} reached the end of the image trying to get {numTiles} tiles.");
+                        bobX = 0;
+                    }
                 }
-
             }
             
             // All Bob info added to the initial offset

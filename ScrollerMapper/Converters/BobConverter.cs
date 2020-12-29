@@ -4,6 +4,11 @@ using ScrollerMapper.DefinitionModels;
 
 namespace ScrollerMapper.Converters
 {
+    internal enum BobMode {
+        NoColorFlip,
+        ColorFlip
+    }
+
     internal class BobConverter
     {
         private readonly BinaryBobRenderer _bobRenderer;
@@ -13,7 +18,7 @@ namespace ScrollerMapper.Converters
             _bobRenderer = bobRenderer;
         }
 
-        public void ConvertBob(string name, BobDefinition definition, int planes, ColorPalette palette, bool colorFlip, Destination destination)
+        public void ConvertBob(string name, BobDefinition definition, int planes, ColorPalette palette, BobMode colorFlip, Destination destination)
         {
             var image = definition.ImageFile.FromInputFolder().LoadIndexedBitmap(palette);
             _bobRenderer.Render(name, image, definition, planes, colorFlip, destination);

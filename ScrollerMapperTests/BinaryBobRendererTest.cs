@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using NUnit.Framework;
 using ScrollerMapper.BitplaneRenderers;
+using ScrollerMapper.Converters;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
 using ScrollerMapperTests.Services;
@@ -66,7 +67,7 @@ namespace ScrollerMapperTests
             CollectionAssert.AreEqual(source, interleaved);
 
 
-            _renderer.Render("test", bitmap, new BobDefinition {Width = 8} , 3, false);
+            _renderer.Render("test", bitmap, new BobDefinition {Width = 8} , 3, BobMode.NoColorFlip);
             var result = _writer.Data;
 
             var expected = new byte[]

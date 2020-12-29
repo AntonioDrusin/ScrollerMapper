@@ -16,10 +16,12 @@ namespace ScrollerMapper.Processors
         private readonly HeaderRenderer _headerRenderer;
         private readonly IWriter _writer;
         private readonly ItemManager _items;
+        private readonly BobConverter _bobConverter;
 
-        public GameProcessor(IEnumerable<IProcessor> processors, ImageConverter imageConverter, MusicConverter musicConverter, 
+        public GameProcessor(IEnumerable<IProcessor> processors, ImageConverter imageConverter,
+            MusicConverter musicConverter,
             HeaderRenderer headerRenderer,
-            IWriter writer, ItemManager items)
+            IWriter writer, ItemManager items, BobConverter bobConverter)
         {
             _processors = processors;
             _imageConverter = imageConverter;
@@ -27,6 +29,7 @@ namespace ScrollerMapper.Processors
             _headerRenderer = headerRenderer;
             _writer = writer;
             _items = items;
+            _bobConverter = bobConverter;
         }
 
         public void Process(GameDefinition definition)
@@ -54,10 +57,32 @@ namespace ScrollerMapper.Processors
             {
                 throw new ConversionException("Must define a menu");
             }
-            
+
+            if ( definition.Panel != null ) 
+                ProcessPanel(definition.Panel);
         }
-        private readonly List<string> _fastHeaders = new List<string> { "menuMusic" };
-        private readonly List<string> _chipHeaders = new List<string> { "menuSamples", "menu" };
+
+        private void ProcessPanel(GamePanelDefinition panel)
+        {
+            _writer.WriteCode(Code.Normal, $"LIVES_X\tequ\t{panel.Lives.X}");
+            _writer.WriteCode(Code.Normal, $"LIVES_Y\tequ\t{panel.Lives.Y}");
+            _writer.WriteCode(Code.Normal, $"LIVES_MAX\tequ\t{panel.Lives.Max}");
+            _writer.WriteCode(Code.Normal, $"LIVES_START\tequ\t{panel.Lives.Start}");
+            _writer.WriteCode(Code.Normal, $"LIVES_PIXEL_WIDTH\tequ\t{panel.Lives.Bob.Width}");
+            _writer.WriteCode(Code.Normal, $"LIVES_PIXEL_HEIGHT\tequ\t{panel.Lives.Bob.Height}");
+
+            var bobPalette = panel.Palette.FromInputFolder().LoadIndexedBitmap();
+            _bobConverter.ConvertBob(
+                "life", 
+                panel.Lives.Bob, 
+                panel.PlaneCount, 
+                bobPalette.Palette, 
+                BobMode.NoColorFlip,
+                Destination.Executable);
+        }
+
+        private readonly List<string> _fastHeaders = new List<string> {"menuMusic"};
+        private readonly List<string> _chipHeaders = new List<string> {"menuSamples", "menu"};
 
         private void ProcessMenu(MenuDefinition definitionMenu)
         {
@@ -86,7 +111,7 @@ namespace ScrollerMapper.Processors
 
         private void ProcessAllLevels(GameDefinition definition)
         {
-            List<string> levelHeaders = new List<string> {"BobPalette", "SpriteArray", "BobArray", "Waves"};
+            List<string> levelHeaders = new List<string> {"BobPalette", "SpriteArray", "BobArray", "Waves", "Bonuses"};
 
             uint maxFastSize = 0;
             uint maxChipSize = 0;
@@ -99,7 +124,7 @@ namespace ScrollerMapper.Processors
 
                 var levelDefinition = level.FileName.FromInputFolder().ReadJsonFile<LevelDefinition>();
                 levelDefinition.Validate();
-                List<IProcessor> processors = _processors.OrderBy(_=>_.GetType().Name).ToList();
+                List<IProcessor> processors = _processors.OrderBy(_ => _.GetType().Name).ToList();
 
                 while (processors.Count > 0)
                 {
@@ -113,9 +138,10 @@ namespace ScrollerMapper.Processors
                     {
                         var issues = string.Join("\n", processors.Select(p =>
                             $"{p.GetType().Name} Cannot be processed, it depends on unresolved objects: {string.Join(",", p.RequiredTypes().Except(_items.AvailableTypes()))}")
-                            );
+                        );
                         throw new ConversionException(issues);
                     }
+
                     Console.WriteLine($"PROCESSING {processor.GetType().Name}");
                     processor.Process(levelDefinition);
                     processors.Remove(processor);
@@ -130,9 +156,9 @@ namespace ScrollerMapper.Processors
                 _headerRenderer.WriteHeaderOffsets("Level", ObjectType.Fast, levelHeaders);
                 _writer.CompleteDiskFile();
             }
+
             _writer.WriteCode(Code.Normal, $"LEVEL_FAST_SIZE\tequ\t{maxFastSize}");
             _writer.WriteCode(Code.Normal, $"LEVEL_CHIP_SIZE\tequ\t{maxChipSize}");
         }
-
     }
 }

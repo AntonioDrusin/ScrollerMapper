@@ -78,6 +78,7 @@
     <Compile Include="DefinitionModels\PlayerDefinition.cs" />
     <Compile Include="MiscRenderers\HeaderRenderer.cs" />
     <Compile Include="Processors\BobProcessor.cs" />
+    <Compile Include="Processors\BonusProcessor.cs" />
     <Compile Include="Processors\EnemyFireProcessor.cs" />
     <Compile Include="Processors\EnemyProcessor.cs" />
     <Compile Include="Processors\GameProcessor.cs" />

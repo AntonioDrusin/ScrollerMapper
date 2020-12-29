@@ -91,7 +91,7 @@ namespace ScrollerMapper.Processors
                         if (shot.Bob == null)
                             throw new ConversionException("Must define 'bob' for each of the 'player.shots'");
                         _bobConverter.ConvertBob($"shot{i}", shot.Bob, definition.BobPlaneCount, bobPalette.Palette,
-                            _definition.BobPaletteFlip0AndLast, Destination.Executable);
+                            _definition.BobPaletteFlip0AndLast ? BobMode.ColorFlip : BobMode.NoColorFlip, Destination.Executable);
                         i++;
                     }
 

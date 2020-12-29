@@ -17,7 +17,8 @@ namespace ScrollerMapper.Processors
         private readonly IPaletteRenderer _paletteRenderer;
         private LevelDefinition _definition;
 
-        public BobProcessor(IWriter writer, BobConverter bobConverter, ItemManager items, IPaletteRenderer paletteRenderer)
+        public BobProcessor(IWriter writer, BobConverter bobConverter, ItemManager items,
+            IPaletteRenderer paletteRenderer)
         {
             _writer = writer;
             _bobConverter = bobConverter;
@@ -29,7 +30,7 @@ namespace ScrollerMapper.Processors
         {
             _definition = definition;
             var bobPalette = _definition.BobPaletteFile.FromInputFolder().LoadIndexedBitmap();
-            
+
             WriteBobComments();
 
             RenderBobPalette(bobPalette.Palette);
@@ -50,7 +51,7 @@ namespace ScrollerMapper.Processors
             var offset = _writer.GetCurrentOffset(ObjectType.Chip);
 
             _bobConverter.ConvertBob(name, bob, definition.BobPlaneCount, bobPalette.Palette,
-                _definition.BobPaletteFlip0AndLast, Destination.Disk);
+                _definition.BobPaletteFlip0AndLast ? BobMode.ColorFlip : BobMode.NoColorFlip, Destination.Disk);
 
             _items.Add(ItemTypes.Bob, name, offset);
         }
@@ -101,6 +102,5 @@ namespace ScrollerMapper.Processors
 ");
             _writer.WriteCode(Code.Normal, "");
         }
-
     }
 }
