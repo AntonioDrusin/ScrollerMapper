@@ -79,7 +79,7 @@ namespace ScrollerMapper.Processors
                         throw new ConversionException("Must define 'shots' for 'player'");
                     }
 
-                    if (_definition.Player.Shots.Count != 2)
+                    if (_definition.Player.Shots.Count != 6)
                     {
                         throw new ConversionException("Must define exactly 2 'shots' for 'player'");
                     }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 
@@ -46,6 +47,15 @@ namespace ScrollerMapper.Processors
                 var fire = _items.Get(ItemTypes.EnemyFire, wave.Fire, wavePair.Key);
                 _writer.WriteOffset(ObjectType.Fast, fire.Offset);
 
+                if (wave.Bonus.Any(b => b > 7))
+                {
+                    throw new ConversionException("Bonus lookup table can only be 0-7");
+                }
+
+                _writer.WriteByte(wave.Bonus[0]);
+                _writer.WriteByte(wave.Bonus[1]);
+                _writer.WriteByte(wave.Bonus[2]);
+                _writer.WriteByte(wave.Bonus[3]);
             }
 
             _writer.WriteWord(0xffff);
@@ -70,6 +80,10 @@ namespace ScrollerMapper.Processors
     word        WaveSpawnXOffset_w   
     word        WaveSpawnYOffset_w  
     long        WaveFirePtr_l
+    byte        WaveBonus0_b        ; Which bonus to drop
+    byte        WaveBonus1_b
+    byte        WaveBonus2_b
+    byte        WaveBonus3_b
     label       WAVE_STRUCT_SIZE
 ");
         }
