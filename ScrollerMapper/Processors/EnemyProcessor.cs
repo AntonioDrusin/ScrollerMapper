@@ -34,11 +34,10 @@ namespace ScrollerMapper.Processors
             foreach (var enemyKeyValue in definition.Enemies)
             {
                 var enemy = enemyKeyValue.Value;
-                var bobForEnemy = _items.Get(ItemTypes.Bob, enemy.Bob, enemyKeyValue.Key);
-
                 var offset = _writer.GetCurrentOffset(ObjectType.Fast);
 
-                _writer.WriteOffset(ObjectType.Chip, bobForEnemy.Offset);
+                WriteBobOffset(enemy.Bob, enemyKeyValue);
+
                 _writer.WriteWord(enemy.FrameDelay);
                 _writer.WriteWord(enemy.Hp);
 
@@ -52,10 +51,18 @@ namespace ScrollerMapper.Processors
                 var soundOffset = (ushort)_items.Get(ItemTypes.Sound, enemy.ExplosionSound, enemyKeyValue.Key).Offset;
                 _writer.WriteWord(soundOffset);
 
+                WriteBobOffset(enemy.PortalBob, enemyKeyValue);
+                
                 _items.Add(ItemTypes.Enemy, enemyKeyValue.Key, offset);
             }
 
             _writer.EndObject();
+        }
+
+        private void WriteBobOffset(string bob, KeyValuePair<string, EnemyDefinition> enemyKeyValue)
+        {
+            var bobForEnemy = _items.Get(ItemTypes.Bob, bob, enemyKeyValue.Key);
+            _writer.WriteOffset(ObjectType.Chip, bobForEnemy.Offset);
         }
 
 
@@ -70,6 +77,7 @@ namespace ScrollerMapper.Processors
     word        EnemyHp_w           ; HP for this enemy
     long        EnemyPoints_l       ; BCD coded points for this enemy
     word        EnemySound_w
+    long        EnemyPortalBobPtr_l ; for appearing and possibly disappearing
     label       ENEMY_STRUCT_SIZE
 ");
         }

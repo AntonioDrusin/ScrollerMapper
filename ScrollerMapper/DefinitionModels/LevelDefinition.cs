@@ -137,6 +137,7 @@ namespace ScrollerMapper.DefinitionModels
         public ushort FrameDelay;
         public ushort Hp = 2;
         public string ExplosionSound;
+        public string PortalBob;
     }
 
     internal class WaveDefinition
