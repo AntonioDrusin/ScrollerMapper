@@ -71,7 +71,6 @@ namespace ScrollerMapper.DefinitionModels
 
     internal class DataDefinition
     {
-        public List<SpriteDefinition> Sprites;
     }
 
 

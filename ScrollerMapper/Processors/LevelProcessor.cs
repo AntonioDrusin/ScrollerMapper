@@ -51,8 +51,6 @@ namespace ScrollerMapper.Processors
         {
             _definition = definition;
 
-            ProcessData(definition.Data); // Generic level data?
-
             if (_definition.Tiles != null)
             {
                 ConvertTiles(_definition);
@@ -69,11 +67,6 @@ namespace ScrollerMapper.Processors
 
                 if (_definition.Player != null)
                 {
-                    _writer.WriteCode(Code.Normal,
-                        $"PLAYER_FRAMEDELAY\t\tequ\t{(uint) _definition.Player.MainSprite.Duration / 20}");
-                    _spriteRenderer.Render("player", _definition.Player.MainSprite);
-                    _spriteRenderer.Render("grazing", _definition.Player.GrazingSprite);
-
                     if (_definition.Player.Shots == null)
                     {
                         throw new ConversionException("Must define 'shots' for 'player'");
@@ -275,31 +268,6 @@ namespace ScrollerMapper.Processors
 
             _writer.EndObject();
         }
-
-
-        private void ProcessData(DataDefinition dataDefinition)
-        {
-            var spriteOffsets = new List<uint>();
-
-            if (dataDefinition?.Sprites != null)
-            {
-                int i = 0;
-                foreach (var sprite in dataDefinition.Sprites)
-                {
-                    spriteOffsets.Add(_writer.GetCurrentOffset(ObjectType.Chip));
-                    _spriteRenderer.Render(i + "Sprite", sprite, Destination.Disk);
-                    i++;
-                }
-
-                _writer.StartObject(ObjectType.Fast, "SpriteArray"); // References to objects that are in chip.
-                _writer.WriteWord((ushort) (spriteOffsets.Count - 1));
-                foreach (var offset in spriteOffsets)
-                {
-                    _writer.WriteOffset(ObjectType.Chip, offset);
-                }
-
-                _writer.EndObject();
-            }
-        }
+        
     }
 }

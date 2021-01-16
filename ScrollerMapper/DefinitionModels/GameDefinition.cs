@@ -8,6 +8,7 @@ namespace ScrollerMapper.DefinitionModels
         public MenuDefinition Menu;
         public Dictionary<string, LevelLinkDefinition> Levels;
         public GamePanelDefinition Panel;
+        public Dictionary<string, SpriteDefinition> Sprites;
     }
 
     internal class GamePanelDefinition

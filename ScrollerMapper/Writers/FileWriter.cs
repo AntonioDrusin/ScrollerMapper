@@ -168,6 +168,7 @@ namespace ScrollerMapper
                 case ObjectType.Layer:
                 case ObjectType.Assembly:
                 case ObjectType.Data:
+                case ObjectType.SpriteFast:
                     break;
                 case ObjectType.Bitmap:
                 case ObjectType.Tile:
@@ -378,6 +379,7 @@ namespace ScrollerMapper
                     extension = "BOB";
                     break;
                 case ObjectType.Sprite:
+                case ObjectType.SpriteFast:
                     extension = "SPRITE";
                     break;
                 case ObjectType.Audio:
@@ -409,6 +411,12 @@ namespace ScrollerMapper
 
         private string GetLabelPostfix(ObjectType type)
         {
+            switch (type)
+            {
+                case ObjectType.SpriteFast:
+                    return "Sprite";
+            }
+
             return type.ToString();
         }
     }

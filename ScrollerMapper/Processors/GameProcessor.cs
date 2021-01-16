@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ScrollerMapper.BitplaneRenderers;
 using ScrollerMapper.Converters;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
@@ -14,6 +15,7 @@ namespace ScrollerMapper.Processors
         private readonly ImageConverter _imageConverter;
         private readonly MusicConverter _musicConverter;
         private readonly HeaderRenderer _headerRenderer;
+        private readonly SpriteRenderer _spriteRenderer;
         private readonly IWriter _writer;
         private readonly ItemManager _items;
         private readonly BobConverter _bobConverter;
@@ -21,7 +23,7 @@ namespace ScrollerMapper.Processors
         public GameProcessor(IEnumerable<IProcessor> processors, ImageConverter imageConverter,
             MusicConverter musicConverter,
             HeaderRenderer headerRenderer,
-            IWriter writer, ItemManager items, BobConverter bobConverter)
+            IWriter writer, ItemManager items, BobConverter bobConverter, SpriteRenderer spriteRenderer)
         {
             _processors = processors;
             _imageConverter = imageConverter;
@@ -30,12 +32,14 @@ namespace ScrollerMapper.Processors
             _writer = writer;
             _items = items;
             _bobConverter = bobConverter;
+            _spriteRenderer = spriteRenderer;
         }
 
         public void Process(GameDefinition definition)
         {
             ProcessGame(definition);
             ProcessAllLevels(definition);
+            ProcessSprites(definition.Sprites);
         }
 
         private void ProcessGame(GameDefinition definition)
@@ -111,7 +115,7 @@ namespace ScrollerMapper.Processors
 
         private void ProcessAllLevels(GameDefinition definition)
         {
-            List<string> levelHeaders = new List<string> {"BobPalette", "SpriteArray", "BobArray", "Waves", "Bonuses"};
+            List<string> levelHeaders = new List<string> {"BobPalette", "BobArray", "Waves", "Bonuses"};
 
             uint maxFastSize = 0;
             uint maxChipSize = 0;
@@ -159,6 +163,18 @@ namespace ScrollerMapper.Processors
 
             _writer.WriteCode(Code.Normal, $"LEVEL_FAST_SIZE\tequ\t{maxFastSize}");
             _writer.WriteCode(Code.Normal, $"LEVEL_CHIP_SIZE\tequ\t{maxChipSize}");
+        }
+
+
+        private void ProcessSprites(Dictionary<string, SpriteDefinition> sprites)
+        {
+            if (sprites != null)
+            {
+                foreach (var keyValue in sprites)
+                {
+                    _spriteRenderer.Render(keyValue.Key, keyValue.Value);
+                }
+            }
         }
     }
 }
