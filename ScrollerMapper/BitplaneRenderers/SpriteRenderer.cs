@@ -14,8 +14,7 @@ namespace ScrollerMapper.BitplaneRenderers
         private readonly IWriter _writer;
         private readonly IBitmapTransformer _transformer;
         private static bool _once;
-        private int _offset;
-        private List<byte[]> _converted;
+        private List<byte[]> _converted0, _converted1;
         private SpriteDefinition _definition;
         private bool _attached;
 
@@ -28,6 +27,9 @@ namespace ScrollerMapper.BitplaneRenderers
         public void Render(string name, SpriteDefinition definition)
         {
             _definition = definition;
+            _converted0 = new List<byte[]>();
+            _converted1 = new List<byte[]>();
+
             _attached =
                 string.Compare(definition.SpriteNumber, "attached", StringComparison.CurrentCultureIgnoreCase) == 0;
             ConvertSprite(name);
@@ -35,11 +37,8 @@ namespace ScrollerMapper.BitplaneRenderers
 
         private void ConvertSprite(string name)
         {
-            _offset = 0;
             var palette = _definition.Palette.FromInputFolder().LoadIndexedBitmap();
             var bitmap = _definition.File.FromInputFolder().LoadBitmap();
-
-            StartCelList(name);
 
             var spriteX = _definition.StartX;
             var spriteY = _definition.StartY;
@@ -54,14 +53,35 @@ namespace ScrollerMapper.BitplaneRenderers
             {
                 var bobBitmap = bitmap.Clone(new Rectangle(spriteX * width, spriteY * height, width, height),
                     bitmap.PixelFormat);
-                bobBitmap = MapColors(_definition, palette, bobBitmap);
+                bobBitmap = MapColors(palette, bobBitmap);
 
                 _transformer.SetBitmap(bobBitmap);
-                var sprite = TrimSprite(_transformer.GetInterleaved(PlaneCount));
 
+                var sprite = TrimSprite(_transformer.GetInterleaved(_attached ? PlaneCount * 2 : PlaneCount));
                 if (sprite.Any(v => v != 0))
                 {
-                    AddSprite(sprite, name);
+                    if (_attached)
+                    {
+                        // Given the content (in words) w0,w1,w2,w3,w4,w5,w6,w7
+                        // sprite0 will take w0,w1,w4,w5
+                        // sprite1 will take w2,w3,w6,w7
+                        var sprite0 = new List<byte>();
+                        var sprite1 = new List<byte>();
+                        var t = 0;
+                        while (t < sprite.Length)
+                        {
+                            for (var n = 0; n < 4; n++) sprite0.Add(sprite[t++]);
+                            for (var n = 0; n < 4; n++) sprite1.Add(sprite[t++]);
+                        }
+
+                        AddSprite(_converted0, sprite0.ToArray());
+                        AddSprite(_converted1, sprite1.ToArray());
+                    }
+                    else
+                    {
+                        AddSprite(_converted0, sprite);
+                    }
+
                     i++;
                 }
 
@@ -76,54 +96,50 @@ namespace ScrollerMapper.BitplaneRenderers
                 }
             }
 
-            CompleteSpriteList(name);
+            WriteSpriteData(name, _converted0);
+            if (_attached) WriteSpriteData(name + "A", _converted1);
         }
 
-        private void CompleteSpriteList(string name)
+        private void WriteSpriteData(string name, List<byte[]> list)
         {
+            WriteSpriteHeader(name);
+            var offset = 0;
+            foreach (var sprite in list)
+            {
+                _writer.WriteCode(Code.Data, $"\tdc.l\t{name}CelsSprite+{offset}");
+                offset += sprite.Length;
+            }
+
             var spriteType = _definition.Mode == SpriteMode.Fast ? ObjectType.SpriteFast : ObjectType.Sprite;
 
             _writer.StartObject(spriteType, $"{name}Cels");
-            foreach (var sprite in _converted)
+            foreach (var sprite in list)
             {
-                WriteControlWords();
                 _writer.WriteBlob(sprite);
-                WriteControlWords();
             }
 
             _writer.EndObject();
         }
 
-        private void WriteControlWords()
+        private void AddSprite(ICollection<byte[]> list, byte[] sprite)
         {
             if (_definition.Mode == SpriteMode.ChipWithControlWords)
             {
-                _writer.WriteWord(0);
-                _writer.WriteWord(0);
+                var controlWords = new byte[] {0, 0, 0, 0};
+                sprite = controlWords.Concat(sprite).Concat(controlWords).ToArray();
             }
+
+            list.Add(sprite);
         }
 
-        private void AddSprite(byte[] sprite, string name)
-        {
-            _converted.Add(sprite);
-            _writer.WriteCode(Code.Data, $"\tdc.l\t{name}CelsSprite+{_offset}");
-            _offset += sprite.Length;
-
-            if (_definition.Mode == SpriteMode.ChipWithControlWords)
-            {
-                _offset += 8; // Add Control words and termination words as well, 
-            }
-        }
-
-        private void StartCelList(string name)
+        private void WriteSpriteHeader(string name)
         {
             WriteSpriteCommentsOnce();
 
-            _converted = new List<byte[]>();
-
             _writer.WriteCode(Code.Data, $"\tsection data");
             _writer.WriteCode(Code.Data, $"{name}Sprite:");
-            _writer.WriteCode(Code.Data, $"\tdc.w\t{_definition.Height-_definition.TopTrim-_definition.BottomTrim}");
+            _writer.WriteCode(Code.Data,
+                $"\tdc.w\t{_definition.Height - _definition.TopTrim - _definition.BottomTrim}");
             _writer.WriteCode(Code.Data, $"\tdc.w\t{_definition.Count}");
         }
 
@@ -147,7 +163,7 @@ namespace ScrollerMapper.BitplaneRenderers
 ");
         }
 
-        private static Bitmap MapColors(SpriteDefinition definition, Bitmap palette, Bitmap celBitmap)
+        private Bitmap MapColors(Bitmap palette, Bitmap celBitmap)
         {
             var resultBitmap = new Bitmap(celBitmap.Width, celBitmap.Height, PixelFormat.Format8bppIndexed);
             var resultPalette = resultBitmap.Palette;
@@ -156,20 +172,31 @@ namespace ScrollerMapper.BitplaneRenderers
                 resultPalette.Entries[i] = Color.FromArgb(0, 0, 0, 0);
             }
 
-            var spriteColorIndexOffset = (int.Parse(definition.SpriteNumber) / 2) * 4;
-            for (int i = 1; i < 4; i++)
+            if (_attached)
             {
-                resultPalette.Entries[i] = palette.Palette.Entries[i + spriteColorIndexOffset];
+                for (int i = 1; i < 16; i++) // 16 colors are allowed for attached sprites on the Amiga
+                {
+                    resultPalette.Entries[i] = palette.Palette.Entries[i];
+                }
+            }
+            else
+            {
+                var spriteColorIndexOffset = (int.Parse(_definition.SpriteNumber) / 2) * 4;
+                for (int i = 1; i < 4; i++)
+                {
+                    resultPalette.Entries[i] = palette.Palette.Entries[i + spriteColorIndexOffset];
+                }
             }
 
-            var transformer = new IndexedTransformer(definition.File, celBitmap, resultPalette);
+            var transformer = new IndexedTransformer(_definition.File, celBitmap, resultPalette);
             return transformer.ConvertToIndexed();
         }
 
         public byte[] TrimSprite(byte[] sprite)
         {
-            var topTrim = _definition.TopTrim * 4;
-            var take = (_definition.Height - (_definition.BottomTrim + _definition.TopTrim)) * 4;
+            var rowSize = _attached ? 8 : 4;
+            var topTrim = _definition.TopTrim * rowSize;
+            var take = (_definition.Height - (_definition.BottomTrim + _definition.TopTrim)) * rowSize;
             return sprite.Skip(topTrim).Take(take).ToArray();
         }
     }
