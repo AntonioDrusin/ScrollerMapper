@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
@@ -32,6 +33,30 @@ namespace ScrollerMapperTests
                 .Select(_ => new OutputPathStepInfo {FrameCount = 1, VelocityX = 4, VelocityY = 4});
 
             CollectionAssert.AreEqual( expected.ToStringCollection(), result.ToStringCollection());
+        }
+
+        [Test]
+        public void LeavesJumpsAlone()
+        {
+            var input = new PathStepDefinition[]
+            {
+                new PathStepDefinition {F = 2, X = 4, Y = 4},
+                new PathStepDefinition {F = 0, X = 0, Y = 0, Instruction = PathInstruction.Jump, Label = "Vel"},
+                new PathStepDefinition {F = 2, X = 4, Y = 4},
+            };
+
+            var result = _transformer.TransformPath(input);
+
+            var expected = new List<OutputPathStepInfo>
+            {
+                new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 4 },
+                new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 4 },
+                new OutputPathStepInfo { FrameCount = 0, VelocityX = 0, VelocityY = 0, Instruction = OutputPathInstruction.Jump, Label = "Vel"},
+                new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 4 },
+                new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 4 }
+            };
+
+            CollectionAssert.AreEqual(expected.ToStringCollection(), result.ToStringCollection());
         }
 
         [Test]

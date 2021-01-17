@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
@@ -39,6 +40,8 @@ namespace ScrollerMapper.Processors
             WritePathComments();
 
             _writer.StartObject(ObjectType.Fast, "Paths");
+            var initialOffset = _writer.GetCurrentOffset(ObjectType.Fast);
+
             foreach (var path in definitionPaths)
             {
                 var currentOffset = _writer.GetCurrentOffset(ObjectType.Fast);
@@ -46,6 +49,8 @@ namespace ScrollerMapper.Processors
 
                 WritePathData(path.Value);
             }
+
+            Console.WriteLine($"PATHS SIZE: {_writer.GetCurrentOffset(ObjectType.Fast)-initialOffset}");
             _writer.EndObject();
         }
 
@@ -57,32 +62,36 @@ namespace ScrollerMapper.Processors
 ** Each path is formed by a number of these structure until framecount is 0.
 
     structure       PathStructure, 0
-    word            PathFrameCount_w
+    byte            PathInstruction_b
+    byte            PathFrameCount_b   
     word            PathVX_w
     word            PathVY_w
     label           PATH_STRUCT_SIZE
 
+;Path instructions
+; 0 - Delta
+; 1 - End
+; 2 - Jump (PathVX_w is the offset of the jump)
+
 ");
         }
+
+        public const int PathStructSize = 6;
 
         private void WritePathData(PathDefinition path)
         {
             var firstTransformer = new SmoothInputPathTransformer();
             var secondTransformer = new OutputPathCoalesceTransformer();
             var finalPath = firstTransformer.TransformPath(path.Steps);
-            finalPath = secondTransformer.GroupPath(finalPath);
+            finalPath = secondTransformer.ProcessPath(finalPath);
 
             foreach (var step in finalPath)
             {
-                _writer.WriteWord(step.FrameCount);
+                _writer.WriteByte((byte)step.Instruction);
+                _writer.WriteByte(step.FrameCount);
                 _writer.WriteWord((ushort)step.VelocityX);
                 _writer.WriteWord((ushort)step.VelocityY);
             }
-
-            // Termination
-            _writer.WriteWord(0);
-            _writer.WriteWord(0);
-            _writer.WriteWord(0);
         }
     }
 }

@@ -161,14 +161,21 @@ namespace ScrollerMapper.DefinitionModels
         public List<PathStepDefinition> Steps = new List<PathStepDefinition>();
     }
 
+    internal enum PathInstruction{
+        Delta,
+        Jump,
+        End,
+    }
+
     internal class PathStepDefinition
     {
-        public string Mode;
+        public PathInstruction Instruction = PathInstruction.Delta;
         public int X;
         public int Y;
         public int F;
         public int In;
         public int Out;
+        public string Label;
     }
 
     internal class SfxDefinition
