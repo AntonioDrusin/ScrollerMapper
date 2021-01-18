@@ -156,10 +156,23 @@ namespace ScrollerMapper.DefinitionModels
         public ushort ExtraBonus = 0;
     }
 
+    internal enum PathModeDefinition
+    {
+        Delta,
+        CenterToCircle
+    }
+
     internal class PathDefinition
     {
-        public string Mode = "v";
+        public PathModeDefinition Mode = PathModeDefinition.Delta;
         public List<PathStepDefinition> Steps = new List<PathStepDefinition>();
+        // For CenterToCircle path
+        public int CenterX = 160;
+        public int CenterY = 100;
+        public int Diameter = 120;
+        public int StartX = 160;
+        public int StartY = 100;
+        public double Speed = 1.0;
     }
 
     internal enum PathInstructionDefinition

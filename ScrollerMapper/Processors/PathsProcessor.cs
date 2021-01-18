@@ -10,6 +10,7 @@ namespace ScrollerMapper.Processors
     {
         private readonly IWriter _writer;
         private readonly ItemManager _items;
+        private LevelDefinition _definition;
 
         public PathsProcessor(IWriter writer, ItemManager items)
         {
@@ -19,6 +20,7 @@ namespace ScrollerMapper.Processors
 
         public void Process(LevelDefinition definition)
         {
+            _definition = definition;
             WritePaths(definition.Paths);
 
             if (definition.Player?.Death?.Path != null)
@@ -27,7 +29,6 @@ namespace ScrollerMapper.Processors
                 WritePathData(definition.Player.Death.Path);
                 _writer.EndObject();
             }
-            
         }
 
         public IEnumerable<string> RequiredTypes()
@@ -50,7 +51,7 @@ namespace ScrollerMapper.Processors
                 WritePathData(path.Value);
             }
 
-            Console.WriteLine($"PATHS SIZE: {_writer.GetCurrentOffset(ObjectType.Fast)-initialOffset}");
+            Console.WriteLine($"PATHS SIZE: {_writer.GetCurrentOffset(ObjectType.Fast) - initialOffset}");
             _writer.EndObject();
         }
 
@@ -80,18 +81,104 @@ namespace ScrollerMapper.Processors
 
         private void WritePathData(PathDefinition path)
         {
+            IEnumerable<OutputPathStepInfo> outputPath;
+            switch (path.Mode)
+            {
+                case PathModeDefinition.Delta:
+                    outputPath = ProcessDeltaPath(path.Steps);
+                    break;
+                case PathModeDefinition.CenterToCircle:
+                    outputPath = ProcessCircularPath(path);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            foreach (var step in outputPath)
+            {
+                _writer.WriteByte((byte) step.Instruction);
+                _writer.WriteByte(step.FrameCount);
+                _writer.WriteWord((ushort) step.VelocityX);
+                _writer.WriteWord((ushort) step.VelocityY);
+            }
+        }
+
+        private IEnumerable<OutputPathStepInfo> ProcessCircularPath(PathDefinition path)
+        {
+            var output = new List<PathStepDefinition>();
+            // First, at velocity, go up until at radius distance from the start.
+            double toX = path.CenterX;
+            double toY = path.CenterY - (path.Diameter / 2);
+            var distanceX = toX - path.StartX;
+            var distanceY = toY - path.StartY;
+            double distance = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
+            var initialSteps = distance / path.Speed;
+
+            output.Add(new PathStepDefinition
+            {
+                F = (int) initialSteps,
+                X = ToFixedPoint(distanceX / initialSteps),
+                Y = ToFixedPoint(distanceY / initialSteps)
+            });
+
+            // Now perform a circle and go back to the beginning
+            var angularVelocity = (Math.PI * 2.0) * (path.Speed / (path.Diameter * Math.PI));
+            int fX = ToFixedPoint(toX);
+            int fY = ToFixedPoint(toY);
+            bool first = true;
+            for (double t = Math.PI * 2.0; t > 0; t -= angularVelocity)
+            {
+                double newX = path.CenterX - (path.Diameter / 2.0) * Math.Sin(t);
+                double newY = path.CenterY - (path.Diameter / 2.0) * Math.Cos(t);
+                var dX = ToFixedPoint(newX - ToDouble(fX));
+                var dY = ToFixedPoint(newY - ToDouble(fY));
+                output.Add(new PathStepDefinition
+                {
+                    F = 1,
+                    X = dX,
+                    Y = dY,
+                    Label = first ? "REPEAT" : null,
+                });
+                fX += dX;
+                fY += dY;
+                first = false;
+            }
+
+            output.Add(new PathStepDefinition
+            {
+                Label = "REPEAT",
+                Instruction = PathInstructionDefinition.Jump,
+            });
+            return ProcessDeltaPath(output);
+        }
+
+        private int ToFixedPoint(double v)
+        {
+            var multiplier = Math.Pow(2, _definition.FixedPointBits);
+            return (int) (v * multiplier);
+        }
+
+        private int ToRoundedFixedPoint(double v)
+        {
+            var multiplier = Math.Pow(2, _definition.FixedPointBits);
+            return (int)(Math.Round(v) * multiplier);
+        }
+
+
+        private double ToDouble(int v)
+        {
+            var multiplier = Math.Pow(2, _definition.FixedPointBits);
+            return (double) v / multiplier;
+        }
+
+
+        private IEnumerable<OutputPathStepInfo> ProcessDeltaPath(List<PathStepDefinition> steps)
+        {
             var firstTransformer = new SmoothInputPathTransformer();
             var secondTransformer = new OutputPathCoalesceTransformer();
-            var finalPath = firstTransformer.TransformPath(path.Steps);
+            var finalPath = firstTransformer.TransformPath(steps);
             finalPath = secondTransformer.ProcessPath(finalPath);
-
-            foreach (var step in finalPath)
-            {
-                _writer.WriteByte((byte)step.Instruction);
-                _writer.WriteByte(step.FrameCount);
-                _writer.WriteWord((ushort)step.VelocityX);
-                _writer.WriteWord((ushort)step.VelocityY);
-            }
+            return finalPath;
         }
     }
 }
