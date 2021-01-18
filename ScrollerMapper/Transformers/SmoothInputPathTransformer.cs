@@ -16,7 +16,7 @@ namespace ScrollerMapper.Transformers
             PathStepDefinition currentStep = null;
 
             foreach (var nextStep in steps.Concat(new List<PathStepDefinition>
-                {new PathStepDefinition {X = 0, Y = 0, Instruction = PathInstruction.End}}))
+                {new PathStepDefinition {X = 0, Y = 0, Instruction = PathInstructionDefinition.End}}))
             {
                 if (currentStep == null)
                 {
@@ -25,7 +25,7 @@ namespace ScrollerMapper.Transformers
                 }
                 else 
                 {
-                    if (currentStep.Instruction == PathInstruction.Delta)
+                    if (currentStep.Instruction == PathInstructionDefinition.Delta)
                     {
                         var labelEmitted = string.IsNullOrWhiteSpace(currentStep.Label);
                         AssertStep(currentStep);
@@ -57,28 +57,13 @@ namespace ScrollerMapper.Transformers
                         yield return new OutputPathStepInfo
                         {
                             Label = currentStep.Label,
-                            Instruction = MapInstruction(currentStep.Instruction),
+                            Instruction = currentStep.Instruction,
                         };
                     }
 
                     previousStep = currentStep;
                     currentStep = nextStep;
                 }
-            }
-        }
-
-        private OutputPathInstruction MapInstruction(PathInstruction instruction)
-        {
-            switch (instruction)
-            {
-                case PathInstruction.Delta:
-                    return OutputPathInstruction.Delta;
-                case PathInstruction.Jump:
-                    return OutputPathInstruction.Jump;
-                case PathInstruction.End:
-                    return OutputPathInstruction.End;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(instruction), instruction, null);
             }
         }
 
@@ -110,11 +95,11 @@ namespace ScrollerMapper.Transformers
             short curVx = 0;
             short curVy = 0;
             long curFrame = 0;
-            OutputPathInstruction curInstruction = OutputPathInstruction.Delta;
+            PathInstructionDefinition curInstruction = PathInstructionDefinition.Delta;
             string emitLabel = null;
             var output = new List<OutputPathStepInfo>();
 
-            var endCode = new OutputPathStepInfo {VelocityY = 0, VelocityX = 0, FrameCount = 0, Instruction = OutputPathInstruction.End};
+            var endCode = new OutputPathStepInfo {VelocityY = 0, VelocityX = 0, FrameCount = 0, Instruction = PathInstructionDefinition.End};
             foreach (var step in steps.Concat(new[]
                 {
                     endCode
@@ -122,7 +107,7 @@ namespace ScrollerMapper.Transformers
             {
                 if (step.VelocityX != curVx || step.VelocityY != curVy || !string.IsNullOrWhiteSpace(step.Label) || step.Instruction != curInstruction)
                 {
-                    if (curInstruction == OutputPathInstruction.Delta)
+                    if (curInstruction == PathInstructionDefinition.Delta)
                     {
                         if (curFrame > 0)
                         {
@@ -173,7 +158,7 @@ namespace ScrollerMapper.Transformers
             var labels = new Dictionary<string, int>();
             foreach (var step in output)
             {
-                if (step.Instruction != OutputPathInstruction.Jump &&
+                if (step.Instruction != PathInstructionDefinition.Jump &&
                     !string.IsNullOrWhiteSpace(step.Label))
                 {
                     labels.Add(step.Label, offset);
@@ -187,7 +172,7 @@ namespace ScrollerMapper.Transformers
             {
                 try
                 {
-                    if (step.Instruction == OutputPathInstruction.Jump)
+                    if (step.Instruction == PathInstructionDefinition.Jump)
                     {
                         var jumpOffset = labels[step.Label] - offset;
                         step.FrameCount = 0;

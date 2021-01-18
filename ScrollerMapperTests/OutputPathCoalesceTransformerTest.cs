@@ -2,6 +2,7 @@
 using System.Linq;
 using NUnit.Framework;
 using ScrollerMapper.Converters.Infos;
+using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Processors;
 using ScrollerMapper.Transformers;
 using ScrollerMapperTests.Services;
@@ -12,7 +13,7 @@ namespace ScrollerMapperTests
     public class OutputPathCoalesceTransformerTest
     {
         private OutputPathCoalesceTransformer _transformer;
-        private OutputPathStepInfo EndCode = new OutputPathStepInfo { VelocityY = 0, VelocityX = 0, FrameCount = 0, Instruction = OutputPathInstruction.End };
+        private OutputPathStepInfo EndCode = new OutputPathStepInfo { VelocityY = 0, VelocityX = 0, FrameCount = 0, Instruction = PathInstructionDefinition.End };
 
         [SetUp]
         public void SetUp()
@@ -73,7 +74,7 @@ namespace ScrollerMapperTests
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 4, Label = "Alcatraz"},
                 new OutputPathStepInfo
                 {
-                    Instruction = OutputPathInstruction.Jump,
+                    Instruction = PathInstructionDefinition.Jump,
                     Label = "Alcatraz"
                 },
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 1},
@@ -87,7 +88,7 @@ namespace ScrollerMapperTests
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 4, Label = "Alcatraz"},
                 new OutputPathStepInfo
                 {
-                    VelocityX = 0, VelocityY = 0, FrameCount = 0, Instruction = OutputPathInstruction.Jump,
+                    VelocityX = 0, VelocityY = 0, FrameCount = 0, Instruction = PathInstructionDefinition.Jump,
                     JumpDelta = -PathsProcessor.PathStructSize
                 },
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 1},

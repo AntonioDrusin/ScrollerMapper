@@ -54,7 +54,7 @@ namespace ScrollerMapper.BitplaneRenderers
             }
             catch(ConversionException ex)
             {
-                throw new ConversionException($"Converting bob ${name}: ${ex.Message}");
+                throw new ConversionException($"Converting bob {name}: {ex.Message}");
             }
 
             _writer.EndObject();
@@ -66,10 +66,8 @@ namespace ScrollerMapper.BitplaneRenderers
             var width = _definition.Width;
             var height = _definition.Height.GetValueOrDefault(bitmap.Height);
             var numTiles = _definition.Count.GetValueOrDefault(bitmap.Width / _definition.Width);
-            var bobX = _definition.StartX.GetValueOrDefault(0);
-            var bobY = _definition.StartY.GetValueOrDefault(0);
-            var maxXBobs = bitmap.Width / _definition.Width;
-            var maxYBobs = bitmap.Height / _definition.Height;
+            var bobX = _definition.StartX;
+            var bobY = _definition.StartY;
 
             var info = new BobData[numTiles];
 
@@ -83,10 +81,10 @@ namespace ScrollerMapper.BitplaneRenderers
                 var currentBob = new BobData();
                 info[i] = currentBob;
 
-                if (bobX * width + width > bitmap.Width) throw new ConversionException("Bob out of bitmap bounds");
-                if (bobY * height + height > bitmap.Height) throw new ConversionException("Bob out of bitmap bounds");
+                if (bobX + width > bitmap.Width) throw new ConversionException("Bob out of bitmap bounds");
+                if (bobY + height > bitmap.Height) throw new ConversionException("Bob out of bitmap bounds");
 
-                var bobBitmap = bitmap.Clone(new Rectangle(bobX * width, bobY * height, width, height),
+                var bobBitmap = bitmap.Clone(new Rectangle(bobX, bobY, width, height),
                     bitmap.PixelFormat);
 
                 _transformer.SetBitmap(bobBitmap);
@@ -146,14 +144,14 @@ namespace ScrollerMapper.BitplaneRenderers
 
                 if (i < numTiles)
                 {
-                    bobX++;
-                    if (bobX >= maxXBobs)
+                    bobX+=width;
+                    if (bobX >= bitmap.Width)
                     {
-                        bobY++;
-                        if (bobY >= maxYBobs)
+                        bobY+=height;
+                        if (bobY >= bitmap.Height)
                             throw new ConversionException(
                                 $"Converting {_definition.ImageFile} reached the end of the image trying to get {numTiles} tiles.");
-                        bobX = 0;
+                        bobX = _definition.StartX;
                     }
                 }
             }

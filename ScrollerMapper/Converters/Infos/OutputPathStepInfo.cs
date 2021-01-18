@@ -1,11 +1,7 @@
-﻿namespace ScrollerMapper.Converters.Infos
+﻿using ScrollerMapper.DefinitionModels;
+
+namespace ScrollerMapper.Converters.Infos
 {
-    internal enum OutputPathInstruction
-    {
-        Delta=0,
-        End=1,
-        Jump=2,
-    }
 
     internal class OutputPathStepInfo
     {
@@ -13,7 +9,7 @@
         public short VelocityX;
         public short VelocityY;
         public string Label;
-        public OutputPathInstruction Instruction;
+        public PathInstructionDefinition Instruction;
 
         public short JumpDelta
         {

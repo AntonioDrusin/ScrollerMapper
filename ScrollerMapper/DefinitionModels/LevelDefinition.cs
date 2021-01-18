@@ -124,8 +124,8 @@ namespace ScrollerMapper.DefinitionModels
         public string ImageFile;
         public int Width;
         public int? Height;
-        public int? StartX;
-        public int? StartY;
+        public int StartX = 0;
+        public int StartY = 0;
         public int? Count;
     }
 
@@ -142,7 +142,7 @@ namespace ScrollerMapper.DefinitionModels
     internal class WaveDefinition
     {
         public string Enemy;
-        public ushort OnExistingWaves;
+        public ushort OnExistingWaves = 100;
         public ushort FrameDelay;
         public ushort Count; // Enemy Count
         public ushort Period;
@@ -161,15 +161,16 @@ namespace ScrollerMapper.DefinitionModels
         public List<PathStepDefinition> Steps = new List<PathStepDefinition>();
     }
 
-    internal enum PathInstruction{
-        Delta,
-        Jump,
-        End,
+    internal enum PathInstructionDefinition
+    {
+        Delta=0,
+        End=1,
+        Jump=2,
     }
 
     internal class PathStepDefinition
     {
-        public PathInstruction Instruction = PathInstruction.Delta;
+        public PathInstructionDefinition Instruction = PathInstructionDefinition.Delta;
         public int X;
         public int Y;
         public int F;

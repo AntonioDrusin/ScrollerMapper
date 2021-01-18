@@ -41,7 +41,7 @@ namespace ScrollerMapperTests
             var input = new PathStepDefinition[]
             {
                 new PathStepDefinition {F = 2, X = 4, Y = 4},
-                new PathStepDefinition {F = 0, X = 0, Y = 0, Instruction = PathInstruction.Jump, Label = "Vel"},
+                new PathStepDefinition {F = 0, X = 0, Y = 0, Instruction = PathInstructionDefinition.Jump, Label = "Vel"},
                 new PathStepDefinition {F = 2, X = 4, Y = 4},
             };
 
@@ -51,7 +51,7 @@ namespace ScrollerMapperTests
             {
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 4 },
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 4 },
-                new OutputPathStepInfo { FrameCount = 0, VelocityX = 0, VelocityY = 0, Instruction = OutputPathInstruction.Jump, Label = "Vel"},
+                new OutputPathStepInfo { FrameCount = 0, VelocityX = 0, VelocityY = 0, Instruction = PathInstructionDefinition.Jump, Label = "Vel"},
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 4 },
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 4, VelocityY = 4 }
             };
