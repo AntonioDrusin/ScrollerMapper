@@ -56,6 +56,7 @@ namespace ScrollerMapper.Processors
                 _writer.WriteByte(wave.Bonus[1]);
                 _writer.WriteByte(wave.Bonus[2]);
                 _writer.WriteByte(wave.Bonus[3]);
+                _writer.WriteWord(wave.ExtraBonus);
             }
 
             _writer.WriteWord(0xffff);
@@ -84,6 +85,7 @@ namespace ScrollerMapper.Processors
     byte        WaveBonus1_b
     byte        WaveBonus2_b
     byte        WaveBonus3_b
+    word        WaveExtraBonus_w
     label       WAVE_STRUCT_SIZE
 ");
         }

@@ -59,8 +59,17 @@ namespace ScrollerMapper
             return new Bitmap(fileName);
         }
 
+        private static readonly Dictionary<string, Bitmap> BitmapCache = new Dictionary<string, Bitmap>();
+
         public static Bitmap LoadIndexedBitmap(this string fileName, ColorPalette palette = null)
         {
+            Bitmap output;
+
+            if (BitmapCache.TryGetValue(fileName, out output))
+            {
+                return output;
+            }
+
             var bitmap = fileName.LoadBitmap();
             if (palette == null)
             {
@@ -73,7 +82,9 @@ namespace ScrollerMapper
             }
 
             var transformer = new IndexedTransformer(fileName, bitmap, palette);
-            return transformer.ConvertToIndexed();
+            output =transformer.ConvertToIndexed();
+            BitmapCache.Add(fileName, output);
+            return output;
         }
     }
 }

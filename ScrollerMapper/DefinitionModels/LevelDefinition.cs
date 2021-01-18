@@ -153,6 +153,7 @@ namespace ScrollerMapper.DefinitionModels
         public string Path;
         public string Fire;
         public byte[] Bonus = new byte[] {0, 0, 0, 0};
+        public ushort ExtraBonus = 0;
     }
 
     internal class PathDefinition
