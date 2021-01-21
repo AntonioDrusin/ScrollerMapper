@@ -58,6 +58,8 @@ namespace ScrollerMapper.Transformers
                         {
                             Label = currentStep.Label,
                             Instruction = currentStep.Instruction,
+                            VelocityX = (short)currentStep.X,
+                            VelocityY = (short)currentStep.Y,
                         };
                     }
 
@@ -94,7 +96,7 @@ namespace ScrollerMapper.Transformers
         {
             short curVx = 0;
             short curVy = 0;
-            long curFrame = 0;
+            short curFrame = 0;
             PathInstructionDefinition curInstruction = PathInstructionDefinition.Delta;
             string emitLabel = null;
             var output = new List<OutputPathStepInfo>();
@@ -113,7 +115,7 @@ namespace ScrollerMapper.Transformers
                         {
                             while (curFrame > 0)
                             {
-                                var emitCount = Math.Min(curFrame, 255);
+                                var emitCount = (short)Math.Min((long)curFrame, 255);
                                 output.Add(
                                  new OutputPathStepInfo
                                  {
@@ -133,9 +135,9 @@ namespace ScrollerMapper.Transformers
                         output.Add(
                          new OutputPathStepInfo
                          {
-                             FrameCount = 0,
-                             VelocityX = 0,
-                             VelocityY = 0,
+                             FrameCount = (short)curFrame,
+                             VelocityX = curVx,
+                             VelocityY = curVy,
                              Label = emitLabel,
                              Instruction = curInstruction,
                          });

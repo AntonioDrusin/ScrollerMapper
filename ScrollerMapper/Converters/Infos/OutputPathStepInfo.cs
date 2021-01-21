@@ -5,7 +5,7 @@ namespace ScrollerMapper.Converters.Infos
 
     internal class OutputPathStepInfo
     {
-        public byte FrameCount;
+        public short FrameCount;
         public short VelocityX;
         public short VelocityY;
         public string Label;

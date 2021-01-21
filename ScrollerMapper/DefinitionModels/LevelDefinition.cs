@@ -180,6 +180,7 @@ namespace ScrollerMapper.DefinitionModels
         Delta=0,
         End=1,
         Jump=2,
+        HomeOnTarget=3,
     }
 
     internal class PathStepDefinition
@@ -187,6 +188,18 @@ namespace ScrollerMapper.DefinitionModels
         public PathInstructionDefinition Instruction = PathInstructionDefinition.Delta;
         public int X;
         public int Y;
+
+        public int V1
+        {
+            get => X;
+            set => X = value;
+        }
+        public int V2
+        {
+            get => Y;
+            set => Y = value;
+        }
+
         public int F;
         public int In;
         public int Out;

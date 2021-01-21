@@ -62,17 +62,26 @@ namespace ScrollerMapper.Processors
 ** The structure is repeated until the FrameCount is 0. That is the end of the path. Enemy will disappear.
 ** Each path is formed by a number of these structure until framecount is 0.
 
-    structure       PathStructure, 0
+    structure       PathStructureBase, 0
     byte            PathInstruction_b
     byte            PathFrameCount_b   
+    label           PATH_STRUCT_BASE_SIZE
+
+    structure       PathStructure, PATH_STRUCT_BASE_SIZE
     word            PathVX_w
     word            PathVY_w
     label           PATH_STRUCT_SIZE
+
+    structure       PathStructureHoming, PATH_STRUCT_BASE_SIZE
+    word            PathMaxVel_w
+    word            PathAccel_w
 
 ;Path instructions
 ; 0 - Delta
 ; 1 - End
 ; 2 - Jump (PathVX_w is the offset of the jump)
+; 3 - Home on target. PathVX_w is max speed PathVY_w is acceleration per frame
+;
 
 ");
         }
@@ -87,7 +96,7 @@ namespace ScrollerMapper.Processors
                 case PathModeDefinition.Delta:
                     outputPath = ProcessDeltaPath(path.Steps);
                     break;
-                case PathModeDefinition.CenterToCircle:
+                case PathModeDefinition.CenterToCircle:     // Now I wish I implemented this as a step.
                     outputPath = ProcessCircularPath(path);
                     break;
                 default:
@@ -97,7 +106,7 @@ namespace ScrollerMapper.Processors
             foreach (var step in outputPath)
             {
                 _writer.WriteByte((byte) step.Instruction);
-                _writer.WriteByte(step.FrameCount);
+                _writer.WriteByte((byte)step.FrameCount);
                 _writer.WriteWord((ushort) step.VelocityX);
                 _writer.WriteWord((ushort) step.VelocityY);
             }

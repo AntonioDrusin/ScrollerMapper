@@ -18,12 +18,13 @@ namespace ScrollerMapper.Processors
             // negative : repeat
             // positive : copy pixels
 
-            List<byte> compressed = new List<byte>();
+            byte[] compressed = new byte[interleaved.Length];
             var pin = 0;
             var sameCount = 0;
             var diffCount = 0;
             var last = interleaved[0];
             var mode = State.None;
+            var cix = 0;
 
             for (int i = 1; i < interleaved.Length; i++)
             {
@@ -48,16 +49,15 @@ namespace ScrollerMapper.Processors
                     case State.Different:
                         if (i - pin == 127)
                         {
-                            compressed.Add(127);
+                            compressed[cix++]=127;
                             pin += 127;
                             mode = State.None;
                         }
                         else if (sameCount >= 3)
                         {
                             var len = i - pin - sameCount + 1;
-                            compressed.Add((byte)(len));
-                            compressed.AddRange(interleaved.Skip(pin).Take(len));
-                            pin += len;
+                            compressed[cix++]=(byte)len;
+                            for (int t = 0; t < len; t++) compressed[cix++] = interleaved[pin++];
                             mode = State.Repeat;
                         }
 
@@ -65,15 +65,15 @@ namespace ScrollerMapper.Processors
                     case State.Repeat:
                         if (i - pin == 128)
                         {
-                            compressed.Add(128);
+                            compressed[cix++] = 128;
                             pin += 128;
                             mode = State.None;
                         }
                         if (diffCount > 0)
                         {
                             var len = i - pin;
-                            compressed.Add((byte)-len);
-                            compressed.Add(interleaved[i - 1]);
+                            compressed[cix++]=(byte)-len;
+                            compressed[cix++]=interleaved[i - 1];
                             pin += len;
                             mode = State.Different;
                         }
@@ -82,7 +82,7 @@ namespace ScrollerMapper.Processors
 
             }
 
-            Console.WriteLine("RLE projected compression " + interleaved.Length + "->" + compressed.Count);
+            Console.WriteLine("RLE projected compression " + interleaved.Length + "->" + cix);
 
         }
     }
