@@ -1,7 +1,8 @@
-﻿using ScrollerMapper.DefinitionModels;
-using ScrollerMapper.ImageRenderers;
+﻿using ScrollerMapper.BitplaneRenderers;
+using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.PaletteRenderers;
 using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Converters
 {

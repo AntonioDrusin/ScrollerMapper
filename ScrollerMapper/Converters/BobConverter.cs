@@ -1,6 +1,7 @@
 ﻿using System.Drawing.Imaging;
 using ScrollerMapper.BitplaneRenderers;
 using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Converters
 {

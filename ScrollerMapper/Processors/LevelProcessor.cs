@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using ScrollerMapper.BitplaneRenderers;
 using ScrollerMapper.Converters;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.PaletteRenderers;
 using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 using ImageConverter = ScrollerMapper.Converters.ImageConverter;
 
 namespace ScrollerMapper.Processors
@@ -21,9 +21,9 @@ namespace ScrollerMapper.Processors
         private readonly ImageConverter _imageConverter;
         private readonly BobConverter _bobConverter;
         private readonly IPaletteRenderer _paletteRenderer;
-        private readonly SpriteRenderer _spriteRenderer;
         private readonly IWriter _writer;
         private readonly ItemManager _items;
+        private readonly ICodeWriter _codeWriter;
 
         private int _scoreboardHeight;
         private LevelDefinition _definition;
@@ -33,18 +33,18 @@ namespace ScrollerMapper.Processors
             ImageConverter imageConverter,
             BobConverter bobConverter,
             IPaletteRenderer paletteRenderer,
-            SpriteRenderer spriteRenderer,
             IWriter writer,
-            ItemManager items
+            ItemManager items,
+            ICodeWriter codeWriter
         )
         {
             _tiledConverter = tiledConverter;
             _imageConverter = imageConverter;
             _bobConverter = bobConverter;
             _paletteRenderer = paletteRenderer;
-            _spriteRenderer = spriteRenderer;
             _writer = writer;
             _items = items;
+            _codeWriter = codeWriter;
         }
 
         public void Process(LevelDefinition definition)
@@ -77,7 +77,6 @@ namespace ScrollerMapper.Processors
                         throw new ConversionException("Must define exactly 2 'shots' for 'player'");
                     }
 
-                    WriteShotStructure();
                     int i = 0;
                     foreach (var shot in _definition.Player.Shots)
                     {
@@ -90,41 +89,38 @@ namespace ScrollerMapper.Processors
 
                     int maxCount = 0;
                     i = 0;
-                    _writer.WriteCode(Code.Data, "\tsection data");
-                    _writer.WriteCode(Code.Data, "shots:");
                     foreach (var shot in _definition.Player.Shots)
                     {
-                        _writer.WriteCode(Code.Data, $"shot{i}:");
-                        _writer.WriteCode(Code.Data, $"\tdc.l\tshot{i}Bob");
-                        _writer.WriteCode(Code.Data,
-                            $"\tdc.w\t{shot.Vx}, {shot.Hit}, {shot.MaxCount}, {shot.Cooldown}\t;vx,hit,maxCount,cooldDown");
-
-
                         var soundOffset = _items.Get(ItemTypes.Sound, shot.Sound, "Player shots").Offset;
-
-                        _writer.WriteCode(Code.Data, $"\tdc.w\t{soundOffset}\t; sound Offset");
+                        _codeWriter.WriteStructValue($"shot{i}", new ShotStructure
+                        {
+                            ShotBobPtr = $"shot{i}Bob", 
+                            ShotVX = (short)shot.Vx,
+                            ShotHit = (short)shot.Hit,
+                            ShotCooldown = (short)shot.Cooldown,
+                            ShotMax = (short)shot.MaxCount,
+                            ShotSound = (short)soundOffset,
+                        });
                         if (shot.MaxCount > maxCount) maxCount = shot.MaxCount;
                         i++;
                     }
 
-                    _writer.WriteCode(Code.Normal, $"MAX_BULLETS\t\tequ\t{maxCount}");
+                    _codeWriter.WriteNumericConstant("MAX_BULLETS", maxCount);
 
                     var playerVx = _definition.Player.Vx;
                     var playerVy = _definition.Player.Vy;
                     var playerVxy = Math.Sin(Math.PI / 4) * (playerVx + playerVy) / 2;
-                    _writer.WriteCode(Code.Normal, $"PLAYER_VX\t\tequ\t{playerVx}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_VY\t\tequ\t{playerVy}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_VD\t\tequ\t{(int) playerVxy}");
-
-                    _writer.WriteCode(Code.Normal,
-                        $"PLAYER_RAYDURATION\t\tequ\t{_definition.Player.Death.RayDuration}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNDELAY\t\tequ\t{_definition.Player.Death.SpawnDelay}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNX\t\tequ\t{_definition.Player.Death.Spawn.X}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNY\t\tequ\t{_definition.Player.Death.Spawn.Y}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNCELH\t\tequ\t{_definition.Player.Death.SpawnCelH}");
-                    _writer.WriteCode(Code.Normal, $"PLAYER_SPAWNCELV\t\tequ\t{_definition.Player.Death.SpawnCelV}");
-                    _writer.WriteCode(Code.Normal,
-                        $"PLAYER_INVULNDURATION\t\tequ\t{_definition.Player.Death.InvulnerabilityDuration}");
+                    _codeWriter.WriteNumericConstant("PLAYER_VX", playerVx);
+                    _codeWriter.WriteNumericConstant("PLAYER_VY", playerVy);
+                    _codeWriter.WriteNumericConstant("PLAYER_VD", (int)playerVxy);
+                    
+                    _codeWriter.WriteNumericConstant("PLAYER_RAYDURATION", _definition.Player.Death.RayDuration);
+                    _codeWriter.WriteNumericConstant("PLAYER_SPAWNDELAY", _definition.Player.Death.SpawnDelay);
+                    _codeWriter.WriteNumericConstant("PLAYER_SPAWNX", _definition.Player.Death.Spawn.X);
+                    _codeWriter.WriteNumericConstant("PLAYER_SPAWNY", _definition.Player.Death.Spawn.Y);
+                    _codeWriter.WriteNumericConstant("PLAYER_SPAWNCELH", _definition.Player.Death.SpawnCelH);
+                    _codeWriter.WriteNumericConstant("PLAYER_SPAWNCELV", _definition.Player.Death.SpawnCelV);
+                    _codeWriter.WriteNumericConstant("PLAYER_INVULNDURATION", _definition.Player.Death.InvulnerabilityDuration);
                 }
             }
             else if (_definition.Player != null)
@@ -143,18 +139,18 @@ namespace ScrollerMapper.Processors
             if (_definition.Panel != null)
             {
                 _imageConverter.ConvertAll("ScoreFont", _definition.Panel.Font);
-                _writer.WriteCode(Code.Normal, $"; Score location");
-                _writer.WriteCode(Code.Normal, $"SCORE_X\t\tequ\t{_definition.Panel.X}");
-                _writer.WriteCode(Code.Normal, $"SCORE_Y\t\tequ\t{_definition.Panel.Y}");
+                _codeWriter.WriteIncludeComments("Score location");
+                
+                _codeWriter.WriteNumericConstant("SCORE_X", _definition.Panel.X);
+                _codeWriter.WriteNumericConstant("SCORE_Y", _definition.Panel.Y);
 
                 var scoreboardInfo = _imageConverter.ConvertAll("Scoreboard", _definition.Panel.Scoreboard);
                 _scoreboardHeight = scoreboardInfo.Height;
             }
 
-            _writer.WriteCode(Code.Normal, $"LEVEL_WIDTH\t\tequ\t\t{_definition.Level.Width}");
-            _writer.WriteCode(Code.Normal,
-                $"FXP_SHIFT\t\tequ\t\t{_definition.FixedPointBits}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
-
+            _codeWriter.WriteNumericConstant("LEVEL_WIDTH",_definition.Level.Width);
+            _codeWriter.WriteIncludeComments("Amount to shift a levelwide X coordinates before using the MapXLookup");
+            _codeWriter.WriteNumericConstant("FXP_SHIFT",_definition.FixedPointBits);
 
             WriteMapLookup();
             WriteMainLookup();
@@ -169,22 +165,6 @@ namespace ScrollerMapper.Processors
             yield return ItemTypes.Sound;
         }
 
-        private void WriteShotStructure()
-        {
-            _writer.WriteCode(Code.Normal, @"
-;---- SHOTS STRUCTURE ----
-    structure   ShotStructure, 0
-    long        ShotBobPtr_l
-    word        ShotVX_w
-    word        ShotHit_w
-    word        ShotMax_w
-    word        ShotCooldown_w
-    word        ShotSound_w             ; Offset in the sounds table
-    label       SHOT_STRUCT_SIZE
-");
-        }
-
-
         private void ConvertTiles(LevelDefinition definition)
         {
             foreach (var tiledDefinition in definition.Tiles)
@@ -192,68 +172,61 @@ namespace ScrollerMapper.Processors
                 _tiledConverter.ConvertAll(tiledDefinition.Key, tiledDefinition.Value);
             }
         }
-
         
-
         private void WriteMapLookup()
         {
             var xShift = (int) (Math.Log(_definition.Level.Width / 256.0, 2) + 0.5);
-            _writer.WriteCode(Code.Normal,
-                $"MAP_XSHIFT\t\tequ\t\t{xShift}\t; Amount to shift a levelwide X coordinates before using the MapXLookup");
+            
+            _codeWriter.WriteIncludeComments("Amount to shift a levelwide X coordinates before using the MapXLookup");
+            _codeWriter.WriteNumericConstant("MAP_XSHIFT", xShift);
 
-            _writer.WriteCode(Code.Data, "\tsection\tdata");
-            _writer.WriteCode(Code.Data,
-                "\n\nMapXLookup: ; given X>>FXP_SHIFT returns x coordinate for the point in the map");
 
             var shiftedLevelWidth = _definition.Level.Width >> xShift;
-            var lookup = new StringBuilder();
+            var lookup = new List<short>();
             for (int x = 0; x < 256; x++)
             {
-                int mapX = x * _definition.Panel.Map.Width / shiftedLevelWidth + _definition.Panel.Map.X;
-                lookup.Append(x % 32 == 0 ? "\n\tdc.w\t" : ",");
-                lookup.Append($"{mapX}");
+                var mapX = (short)(x * _definition.Panel.Map.Width / shiftedLevelWidth + _definition.Panel.Map.X);
+                lookup.Add(mapX);
             }
+            _codeWriter.WriteIncludeComments("given X>>FXP_SHIFT returns x coordinate for the point in the map");
+            _codeWriter.WriteArray("MapXLookup", 16, lookup);
 
             var levelHeight = ScreenHeight - _scoreboardHeight;
             var mapHeight = _definition.Panel.Map.Height;
-            lookup.Append(
-                "\n\nMapYLookup: ; given the Y returns the offset form the beginning of the score bitmap");
+            lookup.Clear();
             for (int y = 0; y < 256; y++)
             {
                 var mappedY = (y + _definition.Panel.Map.Y) * mapHeight / levelHeight;
-                var offset =
-                    mappedY * BytesPerRow * _definition.Panel.Scoreboard.PlaneCount;
-                lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
-                lookup.Append($"{offset}");
+                var offset = (short)(mappedY * BytesPerRow * _definition.Panel.Scoreboard.PlaneCount);
+                lookup.Add(offset);
             }
 
-            _writer.WriteCode(Code.Data, lookup.ToString());
+            _codeWriter.WriteIncludeComments("given the Y returns the offset form the beginning of the score bitmap");
+            _codeWriter.WriteArray("MapYLookup", 16, lookup);
         }
 
         private void WriteMainLookup()
         {
             var random = new Random();
-            var lookup = new StringBuilder();
 
             if (_definition.MainHorizontalBorder % 8 != 0)
                 throw new ConversionException("MainHorizontalBorder must be multiple of 8");
-            _writer.WriteCode(Code.Normal, $"MAIN_BORDERHB=\t\t{_definition.MainHorizontalBorder / 8}");
-            _writer.WriteCode(Code.Normal, $"MAIN_BORDERH=\t\t{_definition.MainHorizontalBorder}");
-            _writer.WriteCode(Code.Normal, $"MAIN_BORDERV=\t\t{_definition.MainVerticalBorder}");
+            
+            _codeWriter.WriteNumericConstant("MAIN_BORDERHB", _definition.MainHorizontalBorder / 8);
+            _codeWriter.WriteNumericConstant("MAIN_BORDERH", _definition.MainHorizontalBorder);
+            _codeWriter.WriteNumericConstant("MAIN_BORDERV", _definition.MainVerticalBorder);
 
-            lookup.Append(
-                "\n\nMainYRandomLookup: ; given the Y returns the offset form the beginning of the score bitmap");
             var oneRowModulo = 40 + 2 * _definition.MainHorizontalBorder / 8;
+            var lookup = new List<short>();
             for (var y = 0; y < 256; y++)
             {
                 var r = random.Next(0, 3);
-                var offset = y * oneRowModulo * 4 + r * oneRowModulo;
-                lookup.Append(y % 32 == 0 ? "\n\tdc.w\t" : ",");
-                lookup.Append($"{offset}");
+                var offset = (short)(y * oneRowModulo * 4 + r * oneRowModulo);
+                lookup.Add(offset);
             }
 
-            _writer.WriteCode(Code.Data, "\tsection\tdata");
-            _writer.WriteCode(Code.Data, lookup.ToString());
+            _codeWriter.WriteIncludeComments("given the Y returns the offset form the beginning of the score bitmap");
+            _codeWriter.WriteArray("MainYRandomLookup", 16, lookup);
         }
 
         private void WriteBobList()
@@ -268,6 +241,18 @@ namespace ScrollerMapper.Processors
 
             _writer.EndObject();
         }
-        
+    }
+
+
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "NotAccessedField.Global")]
+    internal class ShotStructure
+    {
+        public string ShotBobPtr;
+        public short ShotVX;
+        public short ShotHit;
+        public short ShotMax;
+        public short ShotCooldown;
+        public short ShotSound;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.TileRenderers
 {
@@ -7,11 +8,13 @@ namespace ScrollerMapper.TileRenderers
     {
         private readonly IBitmapTransformer _transformer;
         private readonly IWriter _writer;
+        private readonly ICodeWriter _codeWriter;
 
-        public BinaryTileRenderer(IBitmapTransformer transformer, IWriter writer)
+        public BinaryTileRenderer(IBitmapTransformer transformer, IWriter writer, ICodeWriter codeWriter)
         {
             _transformer = transformer;
             _writer = writer;
+            _codeWriter = codeWriter;
         }
 
         /// <summary>
@@ -21,6 +24,7 @@ namespace ScrollerMapper.TileRenderers
         /// <param name="bitmap"></param>
         /// <param name="tileWidth"></param>
         /// <param name="tileHeight"></param>
+        /// <param name="planeCount"></param>
         public void Render(string name, Bitmap bitmap, int tileWidth, int tileHeight, int planeCount)
         {
             if (tileWidth % 8 != 0)
@@ -73,18 +77,16 @@ namespace ScrollerMapper.TileRenderers
                 }
             }
 
-            _writer.WriteCode(Code.Data, "; Tiles are in interlaced format one after another.");
-            _writer.WriteCode(Code.Data,
-                "; The first tile is all zeros and is to be used when Tiled does not have a tile assigned.");
-            _writer.WriteCode(Code.Data,
-                $"; Tiles are {tileByteWidth} byte wide, {tileHeight} pixel tall and have {planeCount} biplanes");
+            _codeWriter.WriteIncludeComments("Tiles are in interlaced format one after another.",
+                "The first tile is all zeros and is to be used when Tiled does not have a tile assigned.",
+                $"Tiles are {tileByteWidth} byte wide, {tileHeight} pixel tall and have {planeCount} biplanes",
+                $"Tile definitions for {name}"
+                );
 
-            _writer.WriteCode(Code.Normal, $"; Tile definitions for {name}");
-            _writer.WriteCode(Code.Normal, $"TILE_BWIDTH_{name.ToUpperInvariant()}\t\t\tequ\t{tileByteWidth}");
-            _writer.WriteCode(Code.Normal, $"TILE_HEIGHT_{name.ToUpperInvariant()}\t\t\tequ\t{tileHeight}");
-            _writer.WriteCode(Code.Normal, $"TILE_PLANE_COUNT_{name.ToUpperInvariant()}\tequ\t{planeCount}");
-
-
+            _codeWriter.WriteNumericConstant($"TILE_BWIDTH_{name.ToUpperInvariant()}", tileByteWidth);
+            _codeWriter.WriteNumericConstant($"TILE_HEIGHT_{name.ToUpperInvariant()}", tileHeight);
+            _codeWriter.WriteNumericConstant($"TILE_PLANE_COUNT_{name.ToUpperInvariant()}", planeCount);
+            
             _writer.StartObject(ObjectType.Tile, name);
             _writer.WriteBlob(destination);
             _writer.EndObject();

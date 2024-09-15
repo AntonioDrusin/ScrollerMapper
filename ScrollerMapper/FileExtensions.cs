@@ -9,6 +9,12 @@ using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper
 {
+    internal enum ConvertMode
+    {
+        TransparentIsZero,
+        StrictPalette
+    }
+
     internal static class FileExtensions
     {
         private static string _sourceRootFolder;
@@ -61,7 +67,7 @@ namespace ScrollerMapper
 
         private static readonly Dictionary<string, Bitmap> BitmapCache = new Dictionary<string, Bitmap>();
 
-        public static Bitmap LoadIndexedBitmap(this string fileName, ColorPalette palette = null)
+        public static Bitmap LoadIndexedBitmap(this string fileName, ColorPalette palette = null, ConvertMode mode = ConvertMode.TransparentIsZero)
         {
             Bitmap output;
 
@@ -81,7 +87,7 @@ namespace ScrollerMapper
                 return bitmap;
             }
 
-            var transformer = new IndexedTransformer(fileName, bitmap, palette);
+            var transformer = new IndexedTransformer(fileName, bitmap, palette, mode);
             output =transformer.ConvertToIndexed();
             BitmapCache.Add(fileName, output);
             return output;

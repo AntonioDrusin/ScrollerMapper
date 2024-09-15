@@ -135,7 +135,7 @@ namespace ScrollerMapper.Transformers
                         output.Add(
                          new OutputPathStepInfo
                          {
-                             FrameCount = (short)curFrame,
+                             FrameCount = curFrame,
                              VelocityX = curVx,
                              VelocityY = curVy,
                              Label = emitLabel,

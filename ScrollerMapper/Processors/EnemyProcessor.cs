@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Processors
 {
@@ -10,11 +11,13 @@ namespace ScrollerMapper.Processors
     {
         private readonly IWriter _writer;
         private readonly ItemManager _items;
+        private readonly ICodeWriter _codeWriter;
 
-        public EnemyProcessor(IWriter writer, ItemManager items)
+        public EnemyProcessor(IWriter writer, ItemManager items, ICodeWriter codeWriter)
         {
             _writer = writer;
             _items = items;
+            _codeWriter = codeWriter;
         }
 
         public void Process(LevelDefinition definition)
@@ -29,7 +32,7 @@ namespace ScrollerMapper.Processors
 
         private void WriteEnemies(LevelDefinition definition)
         {
-            WriteEnemyComments();
+            _codeWriter.WriteStructureDeclaration<EnemyStructure>();
             _writer.StartObject(ObjectType.Fast, "Enemies");
             foreach (var enemyKeyValue in definition.Enemies)
             {
@@ -43,16 +46,16 @@ namespace ScrollerMapper.Processors
 
                 var pointString = enemy.Points.ToString("D8");
                 foreach (var s in Enumerable.Range(0, 4).Select(i =>
-                    byte.Parse($"{pointString.Substring(i * 2, 2)}", NumberStyles.HexNumber)))
+                             byte.Parse($"{pointString.Substring(i * 2, 2)}", NumberStyles.HexNumber)))
                 {
                     _writer.WriteByte(s);
                 }
-                
+
                 var soundOffset = (ushort)_items.Get(ItemTypes.Sound, enemy.ExplosionSound, enemyKeyValue.Key).Offset;
                 _writer.WriteWord(soundOffset);
 
                 WriteBobOffset(enemy.PortalBob, enemyKeyValue);
-                
+
                 _items.Add(ItemTypes.Enemy, enemyKeyValue.Key, offset);
             }
 
@@ -65,21 +68,21 @@ namespace ScrollerMapper.Processors
             _writer.WriteOffset(ObjectType.Chip, bobForEnemy.Offset);
         }
 
-
-        private void WriteEnemyComments()
-        {
-            _writer.WriteCode(Code.Normal, @"
-** Structure for Enemies
-** EnemyBobOffset is an offset in bytes from the Enemies label
-    structure   EnemyStructure, 0
-    long        EnemyBobPtr_l
-    word        EnemyPeriod_w       ; Period in frames between switching bobs
-    word        EnemyHp_w           ; HP for this enemy
-    long        EnemyPoints_l       ; BCD coded points for this enemy
-    word        EnemySound_w
-    long        EnemyPortalBobPtr_l ; for appearing and possibly disappearing
-    label       ENEMY_STRUCT_SIZE
-");
-        }
     }
+
+    [Comments("Structure for Enemies")]
+    internal class EnemyStructure
+    {
+        public int EnemyBobPtr;
+        [Comments("Period in frames between switching bobs")]
+        public short EnemyPeriod;
+        [Comments("HP for this enemy")]
+        public short EnemyHp;
+        [Comments("BCD coded points for this enemy")]
+        public int EnemyPoints;
+        public short EnemySound;
+        [Comments("For appearing and possibly disappearing")]
+        public int EnemyPortalBobPtr;
+    }
+
 }

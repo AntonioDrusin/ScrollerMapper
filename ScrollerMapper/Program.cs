@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.Resolvers.SpecializedResolvers;
@@ -6,7 +7,8 @@ using Castle.Windsor;
 using CommandLine;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
-using ScrollerMapper.Processors;
+using ScrollerMapper.GameProcessors;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper
 {
@@ -16,9 +18,9 @@ namespace ScrollerMapper
         {
             var container = new WindsorContainer();
             container.Kernel.Resolver.AddSubResolver(new CollectionResolver(container.Kernel, true));
-            
+
             Parser.Default.ParseArguments<Options>(args)
-                .WithParsed<Options>(o =>
+                .WithParsed(o =>
                 {
                     container.Register(
                         Classes.FromThisAssembly()
@@ -35,12 +37,17 @@ namespace ScrollerMapper
                             .WithServiceAllInterfaces(),
                         Classes.FromThisAssembly()
                             .IncludeNonPublicTypes()
-                            .Where(t=>t.Name.EndsWith("Renderer"))
+                            .InNamespace("ScrollerMapper.GameProcessors")
+                            .WithServiceAllInterfaces(),
+                        Classes.FromThisAssembly()
+                            .IncludeNonPublicTypes()
+                            .Where(t => t.Name.EndsWith("Renderer"))
                             .WithServiceSelf()
                             .WithServiceAllInterfaces(),
                         Component.For<MainConverter>(),
                         Component.For<Options>().Instance(o),
                         Component.For<IWriter>().ImplementedBy<FileWriter>(),
+                        Component.For<ICodeWriter>().ImplementedBy<CodeWriter>(),
                         Component.For<ItemManager>().ImplementedBy<ItemManager>()
                     );
                     ExecuteConverter(container, o);
@@ -84,18 +91,21 @@ namespace ScrollerMapper
     internal class MainConverter
     {
         private readonly Options _options;
-        private readonly GameProcessor _gameProcessor;
+        private readonly IEnumerable<IGameProcessor> _gameProcessors;
 
-        public MainConverter(Options options, GameProcessor gameProcessor)
+        public MainConverter(Options options, IEnumerable<IGameProcessor> gameProcessors)
         {
             _options = options;
-            _gameProcessor = gameProcessor;
+            _gameProcessors = gameProcessors;
         }
 
         public void Convert()
         {
             var definition = _options.InputFile.ReadJsonFile<GameDefinition>();
-            _gameProcessor.Process(definition);
+            foreach (var gameProcessor in _gameProcessors)
+            {
+                gameProcessor.Process(definition);
+            }
         }
     }
 }

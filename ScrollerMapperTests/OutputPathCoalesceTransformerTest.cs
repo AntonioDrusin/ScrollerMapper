@@ -13,7 +13,7 @@ namespace ScrollerMapperTests
     public class OutputPathCoalesceTransformerTest
     {
         private OutputPathCoalesceTransformer _transformer;
-        private OutputPathStepInfo EndCode = new OutputPathStepInfo { VelocityY = 0, VelocityX = 0, FrameCount = 0, Instruction = PathInstructionDefinition.End };
+        private readonly OutputPathStepInfo _endCode = new OutputPathStepInfo { VelocityY = 0, VelocityX = 0, FrameCount = 0, Instruction = PathInstructionDefinition.End };
 
         [SetUp]
         public void SetUp()
@@ -36,7 +36,7 @@ namespace ScrollerMapperTests
             var expected = new List<OutputPathStepInfo>
             {
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 6},
-                EndCode
+                _endCode
             };
             CollectionAssert.AreEqual(expected.ToStringCollection(), result.ToStringCollection());
         }
@@ -51,7 +51,7 @@ namespace ScrollerMapperTests
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 4},
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 4, Label = "Alcatraz"},
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 1},
-                EndCode,
+                _endCode,
             };
 
             var result = _transformer.ProcessPath(input);
@@ -60,7 +60,7 @@ namespace ScrollerMapperTests
             {
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 5},
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 5, Label = "Alcatraz"},
-                EndCode,
+                _endCode,
             };
             CollectionAssert.AreEqual(expected.ToStringCollection(), result.ToStringCollection());
         }
@@ -92,7 +92,7 @@ namespace ScrollerMapperTests
                     JumpDelta = -PathsProcessor.PathStructSize
                 },
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 0xf6, FrameCount = 1},
-                EndCode,
+                _endCode,
             };
             CollectionAssert.AreEqual(expected.ToStringCollection(), result.ToStringCollection());
         }
@@ -116,7 +116,7 @@ namespace ScrollerMapperTests
             {
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 1, FrameCount = 5},
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 2, FrameCount = 6},
-                EndCode,
+                _endCode,
             };
 
             CollectionAssert.AreEqual(expected.ToStringCollection(), result.ToStringCollection());
@@ -134,7 +134,7 @@ namespace ScrollerMapperTests
             {
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 1, FrameCount = 255},
                 new OutputPathStepInfo {VelocityX = 1, VelocityY = 1, FrameCount = 45},
-                EndCode,
+                _endCode,
             };
 
             CollectionAssert.AreEqual(expected.ToStringCollection(), result.ToStringCollection());

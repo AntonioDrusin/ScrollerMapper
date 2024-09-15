@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 
-namespace ScrollerMapper
+namespace ScrollerMapper.DefinitionModels
 {
     internal class TileSetDefinition
     {

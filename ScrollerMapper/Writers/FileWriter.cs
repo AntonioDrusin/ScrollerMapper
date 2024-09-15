@@ -1,45 +1,35 @@
 ﻿using System;
-using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using ScrollerMapper.StreamExtensions;
 
-namespace ScrollerMapper
+namespace ScrollerMapper.Writers
 {
+    internal enum CodeType {
+        Definition,
+        Declarations,
+    }
+
     internal class FileWriter : IWriter, IDisposable
     {
         private readonly Options _options;
-        private readonly Lazy<IndentedTextWriter> _chipWriter;
-        private readonly Lazy<IndentedTextWriter> _constantWriter;
+        private readonly ICodeWriter _codeWriter;
         private BinaryWriter _currentWriter;
 
         private BinaryWriter _diskChipWriter;
         private BinaryWriter _diskFastWriter;
         private ObjectType _currentObject;
 
-        private IndentedTextWriter ChipWriter => _chipWriter.Value;
-        private IndentedTextWriter NormalWriter => _constantWriter.Value;
-
         private readonly List<string> _offsetDumps = new List<string>();
 
-        public FileWriter(Options options)
+        public FileWriter(Options options, ICodeWriter codeWriter)
         {
             _options = options;
-
-            _chipWriter = CreateCodeFile("_data");
-            _constantWriter = CreateCodeFile("");
+            _codeWriter = codeWriter;
         }
-
-        private Lazy<IndentedTextWriter> CreateCodeFile(string postFix)
-        {
-            var fileName = GetFileNameFor(ObjectType.Assembly,
-                Path.GetFileNameWithoutExtension(_options.InputFile) + postFix);
-            return new Lazy<IndentedTextWriter>(() =>
-                new IndentedTextWriter(new StreamWriter(File.Create(fileName)), "\t"));
-        }
-
+        
         public void StartDiskFile(string diskFileName)
         {
             _diskFileName = diskFileName;
@@ -121,10 +111,9 @@ namespace ScrollerMapper
                     break;
                 default:
                     var fileName = GetFileNameFor(type, name);
-                    DataSection(type);
-                    ChipWriter.WriteLine($"{name}{GetLabelPostfix(type)}:");
-                    ChipWriter.Indent++;
-                    ChipWriter.WriteLine($"incbin {Path.GetFileName(fileName)}");
+                    _codeWriter.IncludeBinary( GetMemoryType(type), 
+                        Path.GetFileName(fileName), 
+                        $"{name}{GetLabelPostfix(type)}");
 
                     _currentWriter = new BinaryWriter(File.Create(fileName));
                     break;
@@ -142,7 +131,6 @@ namespace ScrollerMapper
                     break;
                 case ObjectType.Fast:
                     _currentWriter = _diskFastWriter;
-
                     break;
                 default:
                     throw new NotSupportedException("Only chip and fast are supported with seek");
@@ -157,37 +145,28 @@ namespace ScrollerMapper
             return _offsets[name];
         }
 
-        private void DataSection(ObjectType type)
+        private CodeMemoryType GetMemoryType(ObjectType type)
         {
-            bool isChip = false;
-
             switch (type)
             {
                 case ObjectType.Palette:
                 case ObjectType.TileInfo:
                 case ObjectType.Layer:
-                case ObjectType.Assembly:
                 case ObjectType.Data:
                 case ObjectType.SpriteFast:
-                    break;
+                    return CodeMemoryType.Fast;
                 case ObjectType.Bitmap:
                 case ObjectType.Tile:
                 case ObjectType.Bob:
                 case ObjectType.Sprite:
                 case ObjectType.Audio:
-                    isChip = true;
-                    break;
+                    return CodeMemoryType.Chip;
+                case ObjectType.Fast:
+                case ObjectType.Chip:
+                case ObjectType.Relocations:
+                case ObjectType.Final:
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
-            }
-
-            if (isChip)
-            {
-                ChipWriter.WriteLine("\tsection\t\tdatachip,data_c");
-            }
-            else
-            {
-                ChipWriter.WriteLine("\tsection\t\tdata");
             }
         }
 
@@ -208,12 +187,7 @@ namespace ScrollerMapper
 
                     break;
                 default:
-                    ChipWriter.WriteLine("even");
-                    ChipWriter.Indent--;
-                    ChipWriter.WriteLine();
                     _currentWriter?.Dispose();
-                    ChipWriter.Flush();
-                    NormalWriter.Flush();
                     break;
             }
 
@@ -253,17 +227,17 @@ namespace ScrollerMapper
             WriteLong(destinationOffset);
         }
 
-        public void WriteRelocations()
+        private void WriteRelocations()
         {
-            var relocFile = new BinaryWriter(File.Create(_relocFileName));
-            WriteRelocationList(relocFile, _relocations.Where(_ => _.SourceType == ObjectType.Chip).ToList());
-            WriteRelocationList(relocFile, _relocations.Where(_ => _.SourceType == ObjectType.Fast).ToList());
-            if (relocFile.BaseStream.Position > 5632)
+            var relocationFile = new BinaryWriter(File.Create(_relocFileName));
+            WriteRelocationList(relocationFile, _relocations.Where(r => r.SourceType == ObjectType.Chip).ToList());
+            WriteRelocationList(relocationFile, _relocations.Where(r => r.SourceType == ObjectType.Fast).ToList());
+            if (relocationFile.BaseStream.Position > 5632)
             {
                 throw new ConversionException("relocations longer than 1 track 5632 bytes");
             }
 
-            relocFile.Close();
+            relocationFile.Close();
         }
 
         private void WriteRelocationList(BinaryWriter relocFile, List<Relocation> relocations)
@@ -311,45 +285,19 @@ namespace ScrollerMapper
         {
             _currentWriter.Write(data, 0, count);
         }
-
-        public void WriteCode(Code codeType, string code)
-        {
-            switch (codeType)
-            {
-                case Code.Data:
-                    ChipWriter.WriteLine(code);
-                    break;
-                case Code.Normal:
-                    NormalWriter.WriteLine(code);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(codeType), codeType, null);
-            }
-        }
-
+        
         public void Dispose()
         {
             foreach (var line in _offsetDumps)
             {
                 Console.WriteLine(line);
             }
-
-
-            if (_chipWriter.IsValueCreated)
-            {
-                _chipWriter.Value.Close();
-                _chipWriter.Value.Dispose();
-            }
-
-            if (_constantWriter.IsValueCreated)
-            {
-                _constantWriter.Value.Close();
-                _constantWriter.Value.Dispose();
-            }
-
+                
             _diskChipWriter?.Dispose();
             _diskFastWriter?.Dispose();
         }
+
+
 
         private string GetFileNameFor(ObjectType type, string name)
         {
@@ -357,9 +305,6 @@ namespace ScrollerMapper
             string folder = "";
             switch (type)
             {
-                case ObjectType.Assembly:
-                    extension = "s";
-                    break;
                 case ObjectType.Palette:
                     extension = "PAL";
                     break;

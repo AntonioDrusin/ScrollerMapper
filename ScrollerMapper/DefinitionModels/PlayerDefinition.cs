@@ -34,7 +34,7 @@ namespace ScrollerMapper.DefinitionModels
         public string SpriteNumber;
         public int StartX = 0;
         public int StartY = 0;
-        public int Count = 1;
+        public short Count = 1;
         public int Height = 16;
         public int TopTrim = 0;
         public int BottomTrim = 0;

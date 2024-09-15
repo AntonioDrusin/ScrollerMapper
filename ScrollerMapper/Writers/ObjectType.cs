@@ -1,4 +1,4 @@
-﻿namespace ScrollerMapper
+﻿namespace ScrollerMapper.Writers
 {
     internal enum ObjectType
     {
@@ -7,7 +7,6 @@
         Bitmap,
         Layer,
         Tile,
-        Assembly,
         Bob,
         Sprite,
         SpriteFast,

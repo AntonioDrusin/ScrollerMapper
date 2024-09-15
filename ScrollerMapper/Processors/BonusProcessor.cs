@@ -1,17 +1,20 @@
 ﻿using System.Collections.Generic;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Processors
 {
     internal class BonusProcessor : IProcessor
     {
         private readonly IWriter _writer;
+        private readonly ICodeWriter _codeWriter;
         private readonly ItemManager _items;
 
-        public BonusProcessor(IWriter writer, ItemManager items)
+        public BonusProcessor(IWriter writer, ICodeWriter codeWriter, ItemManager items)
         {
             _writer = writer;
+            _codeWriter = codeWriter;
             _items = items;
         }
 
@@ -35,17 +38,17 @@ namespace ScrollerMapper.Processors
 
         private void WriteBonusComments()
         {
-            _writer.WriteCode(Code.Normal, @"
-; Bonus structure
-        structure    BonusStructure, 0
-        long         BonusBobPtr_l
-        label        BONUS_STRUCT_SIZE
-");
+         _codeWriter.WriteStructureDeclaration<BonusStructure>();   
         }
 
         public IEnumerable<string> RequiredTypes()
         {
             yield return ItemTypes.Bob;
         }
+    }
+
+    internal class BonusStructure
+    {
+        public int BonusBobPtr;
     }
 }

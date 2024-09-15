@@ -2,6 +2,7 @@
 using NAudio.Wave;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Processors
 {
@@ -13,11 +14,13 @@ namespace ScrollerMapper.Processors
         private readonly Dictionary<string, int> _waveLengths = new Dictionary<string, int>();
         private const double TicksPerSecond = 3546895.0; // HWM PAL
         private readonly ItemManager _items;
-        
-        public SfxProcessor(IWriter writer, ItemManager items)
+        private readonly ICodeWriter _codeWriter;
+
+        public SfxProcessor(IWriter writer, ItemManager items, ICodeWriter codeWriter)
         {
             _writer = writer;
             _items = items;
+            _codeWriter = codeWriter;
         }
 
         public void Process(LevelDefinition definition)
@@ -45,16 +48,7 @@ namespace ScrollerMapper.Processors
 
         private void WriteSounds(SfxDefinition sfxDefinition)
         {
-            _writer.WriteCode(Code.Normal, @"
-    ** structure for audio
-    structure   SoundStructure, 0
-    word        SoundStartOffset_w       ; Offset from the fx pack where to start sound
-    word        SoundPeriod_w            ; 
-    word        SoundLength_w   
-    byte        SoundVolume_b            ; Audio volume
-    byte        SoundUnused_b            ;
-    label       SOUND_STRUCTURE_SIZE
-            ");
+            _codeWriter.WriteStructureDeclaration<SoundStructure>();
 
             _writer.StartObject(ObjectType.Data, "sounds");
 
@@ -119,4 +113,15 @@ namespace ScrollerMapper.Processors
         }
         
     }
+
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+    internal class SoundStructure
+    {
+        public short SoundStartOffset;
+        public short SoundPeriod;
+        public short SoundLength;
+        public byte SoundVolume;
+        public byte SoundUnused;
+    }
+    
 }

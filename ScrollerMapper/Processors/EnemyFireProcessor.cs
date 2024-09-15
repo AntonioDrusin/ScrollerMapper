@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Processors
 {
@@ -13,16 +14,30 @@ namespace ScrollerMapper.Processors
         FastDirect,
     }
 
+    // ReSharper disable once ClassNeverInstantiated.Global
+    internal class FireStructure
+    {
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+        public short FireSoundLUT;
+        public short FireMovement;
+        public short FirePeriod;
+        public short FireSpeed;
+        public int FireBobPtr;
+#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
+    }
+
     internal class EnemyFireProcessor : IProcessor
     {
         private readonly IWriter _writer;
         private readonly ItemManager _items;
+        private readonly ICodeWriter _codeWriter;
         private EnemyFireDefinition _definition;
 
-        public EnemyFireProcessor(IWriter writer, ItemManager items)
+        public EnemyFireProcessor(IWriter writer, ItemManager items, ICodeWriter codeWriter)
         {
             _writer = writer;
             _items = items;
+            _codeWriter = codeWriter;
         }
 
         public void Process(LevelDefinition definition)
@@ -53,26 +68,15 @@ namespace ScrollerMapper.Processors
 
         private void WriteEnemyFireComments()
         {
-            _writer.WriteCode(Code.Normal, @"
-** Enemy Fire Definitions
-");
+            _codeWriter.WriteIncludeComments("Enemy Fire Definitions");
+
             foreach (var name in Enum.GetNames(typeof(EnemyFireMovements)))
             {
                 var value = (int) Enum.Parse(typeof(EnemyFireMovements), name);
-                _writer.WriteCode(Code.Normal, $"FIREMOV_{name}\tequ\t{value}");
+                _codeWriter.WriteNumericConstant($"FIREMOV_{name}", value);
             }
-
-            _writer.WriteCode(Code.Normal, $"FIRE_LOOKUP_PRECISION\tequ\t9");
-
-            _writer.WriteCode(Code.Normal, @"
-    structure FireStructure, 0
-    word    FireSoundLUT_w
-    word    FireMovement_w
-    word    FirePeriod_w
-    word    FireSpeed_w
-    long    FireBobPtr_l
-    label   FIRE_STRUCT_SIZE
-");
+            _codeWriter.WriteNumericConstant("FIRE_LOOKUP_PRECISION", 9);
+            _codeWriter.WriteStructureDeclaration<FireStructure>();
         }
 
         private void WriteSupportingCode()
@@ -82,25 +86,20 @@ namespace ScrollerMapper.Processors
             WriteDirectFireTable("SlowDirectFire", _definition.Direct.SlowSpeed);
         }
 
-        private void WriteDirectFireTable(string label, double directFastSpeed)
+        private void WriteDirectFireTable(string name, double directFastSpeed)
         {
-            int precision = 9;
-            _writer.WriteCode(Code.Data, "\tsection data");
-            _writer.WriteCode(Code.Data, $"{label}Lookup:");
+            const int precision = 9;
+            var list = new List<byte>();
             for (double x = 0; x <= precision; x++)
             {
-                var list = new List<byte>();
                 for (double y = 0; y < precision; y++)
                 {
                     var num = directFastSpeed / Math.Sqrt((x * x) + (y * y));
 
                     list.Add((byte) Math.Round(x * num * 16));
                 }
-
-                _writer.WriteCode(Code.Data, $"\tdc.b\t{string.Join(",", list)}");
             }
-
-            _writer.WriteCode(Code.Data, "\teven");
+            _codeWriter.WriteArray(name, 8, list.ToArray());
         }
 
         public IEnumerable<string> RequiredTypes()

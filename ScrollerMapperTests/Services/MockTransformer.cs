@@ -11,7 +11,7 @@ namespace ScrollerMapperTests.Services
 
         public void SetArray(int byteWidth, int height, byte[] array)
         {
-            _byteWidth = byteWidth;;
+            _byteWidth = byteWidth;
             _height = height;
             _array = array;
         }

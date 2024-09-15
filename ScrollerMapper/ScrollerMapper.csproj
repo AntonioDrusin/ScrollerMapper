@@ -33,7 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <RunPostBuildEvent>Always</RunPostBuildEvent>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Castle.Core" Version="4.4.1" />
@@ -57,6 +57,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="asd.cs" />
     <Compile Include="Aseprite.cs" />
     <Compile Include="BitmapExtensions.cs" />
     <Compile Include="BitplaneRenderers\BinaryBitplaneRenderer.cs" />
@@ -73,15 +74,16 @@
     <Compile Include="Converters\MusicConverter.cs" />
     <Compile Include="DefinitionModels\GameDefinition.cs" />
     <Compile Include="DefinitionModels\LevelDefinition.cs" />
-    <Compile Include="BitplaneRenderers\BinaryFontRenderer.cs" />
     <Compile Include="DefinitionModels\MusicDefinition.cs" />
     <Compile Include="DefinitionModels\PlayerDefinition.cs" />
+    <Compile Include="GameProcessors\IGameProcessor.cs" />
     <Compile Include="MiscRenderers\HeaderRenderer.cs" />
     <Compile Include="Processors\BobProcessor.cs" />
     <Compile Include="Processors\BonusProcessor.cs" />
     <Compile Include="Processors\EnemyFireProcessor.cs" />
     <Compile Include="Processors\EnemyProcessor.cs" />
-    <Compile Include="Processors\GameProcessor.cs" />
+    <Compile Include="GameProcessors\FontProcessor.cs" />
+    <Compile Include="GameProcessors\GameProcessor.cs" />
     <Compile Include="Processors\PathsProcessor.cs" />
     <Compile Include="Processors\RunLengthEncoder.cs" />
     <Compile Include="Processors\SfxProcessor.cs" />
@@ -94,6 +96,10 @@
     <Compile Include="Transformers\IndexedTransformer.cs" />
     <Compile Include="Transformers\PaletteTransformer.cs" />
     <Compile Include="Transformers\SmoothInputPathTransformer.cs" />
+    <Compile Include="Writers\AssemblyCodeType.cs" />
+    <Compile Include="Writers\CodeWriter.cs" />
+    <Compile Include="Writers\CommentsAttribute.cs" />
+    <Compile Include="Writers\ICodeWriter.cs" />
     <Compile Include="Writers\IWriter.cs" />
     <Compile Include="Transformers\BitmapTransformer.cs" />
     <Compile Include="FileExtensions.cs" />
@@ -123,9 +129,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="CodeGenerators\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>copy $(TargetDir)\*.*  $(SolutionDir)\..\toolchain\ToolChain</PostBuildEvent>
-  </PropertyGroup>
 </Project>

@@ -1,4 +1,5 @@
 ﻿using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.PaletteRenderers
 {

@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using ScrollerMapper.Writers;
 
-namespace ScrollerMapper.HeaderRenderers
+namespace ScrollerMapper.MiscRenderers
 {
     internal class HeaderRenderer
     {
         private readonly IWriter _writer;
-        private readonly HashSet<Tuple<string, ObjectType>> _doneComments =new HashSet<Tuple<string, ObjectType>>();
+        private readonly ICodeWriter _codeWriter;
 
-        public HeaderRenderer(IWriter writer)
+        public HeaderRenderer(IWriter writer, ICodeWriter codeWriter)
         {
             _writer = writer;
+            _codeWriter = codeWriter;
         }
 
         public void WriteHeader(string name, ObjectType type, List<string> objectNames)
@@ -28,17 +30,7 @@ namespace ScrollerMapper.HeaderRenderers
 
         private void WriteStructureParts(string name, ObjectType type, List<string> objectNames)
         {
-            var key = Tuple.Create(name, type); // In case we create multiple level files
-            if (_doneComments.Contains(key)) return;
-            _doneComments.Add(key);
-
-            _writer.WriteCode(Code.Normal, $"\n\n; Structure for file for {name} in {type} ram");
-            _writer.WriteCode(Code.Normal, $"\tstructure   {name}{type}Structure, 0");
-            foreach (var element in objectNames)
-            {
-                _writer.WriteCode(Code.Normal, $"\tlong\t\t{name}{type}{element}Ptr_l");
-            }
-            _writer.WriteCode(Code.Normal, $"\tlabel       {name.ToUpper()}_{type.ToString().ToUpper()}_STRUCT_SIZE");
+            _codeWriter.WriteStructureDeclarationOfLongs(name, type.ToString(), objectNames);
         }
 
         public void WriteHeaderOffsets(string name, ObjectType type, List<string> objectNames)

@@ -1,4 +1,6 @@
-﻿namespace ScrollerMapper.LayerInfoRenderers
+﻿using ScrollerMapper.DefinitionModels;
+
+namespace ScrollerMapper.LayerInfoRenderers
 {
     internal interface ILayerInfoRenderer
     {

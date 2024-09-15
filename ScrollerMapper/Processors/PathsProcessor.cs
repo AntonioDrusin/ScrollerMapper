@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Processors
 {
@@ -10,12 +11,14 @@ namespace ScrollerMapper.Processors
     {
         private readonly IWriter _writer;
         private readonly ItemManager _items;
+        private readonly ICodeWriter _codeWriter;
         private LevelDefinition _definition;
 
-        public PathsProcessor(IWriter writer, ItemManager items)
+        public PathsProcessor(IWriter writer, ItemManager items, ICodeWriter codeWriter)
         {
             _writer = writer;
             _items = items;
+            _codeWriter = codeWriter;
         }
 
         public void Process(LevelDefinition definition)
@@ -55,37 +58,6 @@ namespace ScrollerMapper.Processors
             _writer.EndObject();
         }
 
-        private void WritePathComments()
-        {
-            _writer.WriteCode(Code.Normal, @"
-** Structure for a path
-** The structure is repeated until the FrameCount is 0. That is the end of the path. Enemy will disappear.
-** Each path is formed by a number of these structure until framecount is 0.
-
-    structure       PathStructureBase, 0
-    byte            PathInstruction_b
-    byte            PathFrameCount_b   
-    label           PATH_STRUCT_BASE_SIZE
-
-    structure       PathStructure, PATH_STRUCT_BASE_SIZE
-    word            PathVX_w
-    word            PathVY_w
-    label           PATH_STRUCT_SIZE
-
-    structure       PathStructureHoming, PATH_STRUCT_BASE_SIZE
-    word            PathMaxVel_w
-    word            PathAccel_w
-
-;Path instructions
-; 0 - Delta
-; 1 - End
-; 2 - Jump (PathVX_w is the offset of the jump)
-; 3 - Home on target. PathVX_w is max speed PathVY_w is acceleration per frame
-;
-
-");
-        }
-
         public const int PathStructSize = 6;
 
         private void WritePathData(PathDefinition path)
@@ -117,7 +89,7 @@ namespace ScrollerMapper.Processors
             var output = new List<PathStepDefinition>();
             // First, at velocity, go up until at radius distance from the start.
             double toX = path.CenterX;
-            double toY = path.CenterY - (path.Diameter / 2);
+            double toY = path.CenterY - (path.Diameter / 2.0);
             var distanceX = toX - path.StartX;
             var distanceY = toY - path.StartY;
             double distance = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
@@ -166,18 +138,11 @@ namespace ScrollerMapper.Processors
             var multiplier = Math.Pow(2, _definition.FixedPointBits);
             return (int) (v * multiplier);
         }
-
-        private int ToRoundedFixedPoint(double v)
-        {
-            var multiplier = Math.Pow(2, _definition.FixedPointBits);
-            return (int)(Math.Round(v) * multiplier);
-        }
-
-
+        
         private double ToDouble(int v)
         {
             var multiplier = Math.Pow(2, _definition.FixedPointBits);
-            return (double) v / multiplier;
+            return v / multiplier;
         }
 
 
@@ -189,5 +154,45 @@ namespace ScrollerMapper.Processors
             finalPath = secondTransformer.ProcessPath(finalPath);
             return finalPath;
         }
+
+        private void WritePathComments()
+        {
+            _codeWriter.WriteStructureDeclaration<PathBaseStructure>();
+            _codeWriter.WriteStructureDeclaration<PathStructure>();
+            _codeWriter.WriteStructureDeclaration<PathHomingStructure>();
+            _codeWriter.WriteIncludeComments(
+                "Path instructions", 
+                "0 - Delta",
+                "1 - End",
+                "2 - Jump PathVX_w is the offset" +
+                "3 - Home on target");
+        }
+    }
+
+    [Comments("Structure for a path\n" +
+              "The structure is repeated until the FrameCount is 0. That is the end of the path. Enemy will disappear.\n" +
+              "Each path is formed by a number of these structure until framecount is 0.")]
+    internal class PathBaseStructure
+    {
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+        public byte PathInstruction;
+        public byte PathFrameCount;
+#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
+    }
+
+    internal abstract class PathStructure : PathBaseStructure
+    {
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+        public short PathVX;
+        public short PathVY;
+#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
+    }
+
+    internal abstract class PathHomingStructure : PathBaseStructure
+    {
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+        public short PathMaxVel;
+        public short PathAccel;
+#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
     }
 }

@@ -2,6 +2,7 @@
 using System.Linq;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Processors
 {
@@ -9,21 +10,22 @@ namespace ScrollerMapper.Processors
     {
         private readonly IWriter _writer;
         private readonly ItemManager _items;
+        private readonly ICodeWriter _codeWriter;
 
-        public WaveProcessor(IWriter writer, ItemManager items)
+        public WaveProcessor(IWriter writer, ItemManager items, ICodeWriter codeWriter)
         {
             _writer = writer;
             _items = items;
+            _codeWriter = codeWriter;
         }
 
 
         public void Process(LevelDefinition definition)
         {
             WriteWaveComments();
-            _writer.WriteCode(Code.Normal, $"MaxActiveWaves\t\tequ\t{definition.MaxActiveWaves}");
-            _writer.WriteCode(Code.Normal, $"MaxActiveEnemies\t\tequ\t{definition.MaxActiveEnemies}");
-            _writer.WriteCode(Code.Data, "; Waves");
-            _writer.WriteCode(Code.Data, "; final wave has a special WaveDelay of $ffff to mark the end");
+            _codeWriter.WriteNumericConstant("MaxActiveWaves", definition.MaxActiveWaves);
+            _codeWriter.WriteNumericConstant("MaxActiveEnemies", definition.MaxActiveEnemies);
+            _codeWriter.WriteIncludeComments("Waves: final wave has a special WaveDelay of $ffff to mark the end");
 
             _writer.StartObject(ObjectType.Fast, "Waves");
 
@@ -66,28 +68,7 @@ namespace ScrollerMapper.Processors
 
         private void WriteWaveComments()
         {
-            _writer.WriteCode(Code.Normal, @"
-** Structure for wave
-** WaveEnemyOffset_b is an offset off of the Enemies label to point to the enemy
-    structure   WaveStructure, 0
-    word        WaveDelay_w         ; Frame delay before wave is considered for spawn
-    word        WaveOnCount_w       ; no more than OnCount waves remaining before start
-    word        WaveEnemyCount_w    
-    long        WaveEnemyPtr_l      
-    long        WavePathPtr_l           
-    word        WavePeriod_w        ; Frames between enemy spawn
-    word        WaveSpawnX_w        ; spawn location X
-    word        WaveSpawnY_w        ; spawn location Y
-    word        WaveSpawnXOffset_w   
-    word        WaveSpawnYOffset_w  
-    long        WaveFirePtr_l
-    byte        WaveBonus0_b        ; Which bonus to drop
-    byte        WaveBonus1_b
-    byte        WaveBonus2_b
-    byte        WaveBonus3_b
-    word        WaveExtraBonus_w
-    label       WAVE_STRUCT_SIZE
-");
+            _codeWriter.WriteStructureDeclaration<WaveStructure>();
         }
         
         public IEnumerable<string> RequiredTypes()
@@ -96,6 +77,29 @@ namespace ScrollerMapper.Processors
             yield return ItemTypes.Path;
             yield return ItemTypes.EnemyFire;
         }
+    }
+
+    
+    internal class WaveStructure
+    {
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+        public short WaveDelay;
+        public short WaveOnCount;
+        public short WaveEnemyCount;
+        public int WaveEnemyPtr;
+        public int WavePathPtr;
+        public short WavePeriod;
+        public short WaveSpawnX;
+        public short WaveSpawnY;
+        public short WaveSpawnXOffset;
+        public short WaveSpawnYOffset;
+        public int WaveFirePtr;
+        public byte WaveBonus0;
+        public byte WaveBonus1;
+        public byte WaveBonus2;
+        public byte WaveBonus3;
+        public short WaveExtraBonus;
+#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
     }
 }
 

@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
+using ScrollerMapper.Writers;
 
-namespace ScrollerMapper.ImageRenderers
+namespace ScrollerMapper.BitplaneRenderers
 {
     internal interface IBitplaneRenderer
     {

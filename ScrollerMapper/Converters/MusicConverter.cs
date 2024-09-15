@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.Converters
 {

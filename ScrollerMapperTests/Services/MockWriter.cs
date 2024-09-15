@@ -1,6 +1,6 @@
 ﻿using System.IO;
-using ScrollerMapper;
 using ScrollerMapper.StreamExtensions;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapperTests.Services
 {

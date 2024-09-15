@@ -16,6 +16,7 @@ namespace ScrollerMapper.Transformers
     {
         public bool Equals(ColorIndex x, ColorIndex y)
         {
+            if (x == null || y == null) return false;
             return x.Color.Equals(y.Color);
         }
 
@@ -34,16 +35,17 @@ namespace ScrollerMapper.Transformers
         private bool _missedColor;
         private readonly Dictionary<Tuple<byte, byte, byte>, byte> _lut;
 
-        public IndexedTransformer(string fileName, Bitmap bitmap, ColorPalette palette)
+        public IndexedTransformer(string fileName, Bitmap bitmap, ColorPalette palette, ConvertMode mode)
         {
             _fileName = fileName;
             _bitmap = bitmap;
             _palette = palette;
             // We reserve color 0 for transparent
-            _lut = palette.Entries.Skip(1).Select((c, i) => new ColorIndex {Color = c, Index = i})
-                .Where(_ => _.Color.A == 255) // Only get colors with no alpha
+            var skip = mode == ConvertMode.TransparentIsZero ? 1 : 0;
+            _lut = palette.Entries.Skip( skip ).Select((c, i) => new ColorIndex {Color = c, Index = i})
+                .Where(p => p.Color.A == 255) // Only get colors with no alpha
                 .Distinct(new ColorIndexComparer())
-                .ToDictionary(_ => Tuple.Create(_.Color.R, _.Color.G, _.Color.B), _ => (byte) (_.Index + 1));
+                .ToDictionary(p => Tuple.Create(p.Color.R, p.Color.G, p.Color.B), color => (byte) (color.Index + skip));
         }
 
         public Bitmap ConvertToIndexed()
@@ -63,6 +65,7 @@ namespace ScrollerMapper.Transformers
                 for (int y = 0; y < height; y++)
                 {
                     var color = _bitmap.GetPixel(x, y);
+                    
                     result[width * y + x] = color.A < 255 ? (byte) 0 : GetClosestColorIndex(color);
                 }
             }
@@ -79,10 +82,9 @@ namespace ScrollerMapper.Transformers
 
         private byte GetClosestColorIndex(Color color)
         {
-            byte index;
-            if (_lut.TryGetValue(Tuple.Create(color.R, color.G, color.B), out index))
+            if (_lut.TryGetValue(Tuple.Create(color.R, color.G, color.B), out var index))
             {
-                return (byte) index;
+                return index;
             }
 
             var distance = double.MaxValue;

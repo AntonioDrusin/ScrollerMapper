@@ -3,18 +3,21 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using ScrollerMapper.Processors;
 using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 
-namespace ScrollerMapper.ImageRenderers
+namespace ScrollerMapper.BitplaneRenderers
 {
     internal class BinaryBitplaneRenderer : IBitplaneRenderer
     {
         private readonly IWriter _writer;
         private readonly IBitmapTransformer _transformer;
+        private readonly ICodeWriter _codeWriter;
 
-        public BinaryBitplaneRenderer(IWriter writer, IBitmapTransformer transformer)
+        public BinaryBitplaneRenderer(IWriter writer, IBitmapTransformer transformer, ICodeWriter codeWriter)
         {
             _writer = writer;
             _transformer = transformer;
+            _codeWriter = codeWriter;
         }
 
         public void Render(string name, Bitmap bitmap, int planeCount, Destination destination)
@@ -32,9 +35,9 @@ namespace ScrollerMapper.ImageRenderers
             var byteWidth = _transformer.GetByteWidth();
             var height = _transformer.GetHeight();
 
-            _writer.WriteCode(Code.Normal, $"{name}_BPL\t\tequ\t{planeCount}");
-            _writer.WriteCode(Code.Normal, $"{name}_BWIDTH\t\tequ\t{byteWidth}");
-            _writer.WriteCode(Code.Normal, $"{name}_HEIGHT\t\tequ\t{height}");
+            _codeWriter.WriteNumericConstant($"{name}_BPL", planeCount);
+            _codeWriter.WriteNumericConstant($"{name}_BWIDTH", byteWidth);
+            _codeWriter.WriteNumericConstant($"{name}_HEIGHT", height);
 
             var interleaved = _transformer.GetInterleaved(planeCount);
 
@@ -43,9 +46,5 @@ namespace ScrollerMapper.ImageRenderers
             _writer.WriteBlob(interleaved);
             _writer.EndObject();
         }
-
-     
-
-    
     }
 }

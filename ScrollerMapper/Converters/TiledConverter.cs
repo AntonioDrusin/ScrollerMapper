@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using ScrollerMapper.DefinitionModels;
+﻿using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.LayerInfoRenderers;
 using ScrollerMapper.PaletteRenderers;
 using ScrollerMapper.TileRenderers;

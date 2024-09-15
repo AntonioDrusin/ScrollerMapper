@@ -5,22 +5,32 @@ using System.Drawing.Imaging;
 using System.Linq;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.BitplaneRenderers
 {
+    [Comments("Definition of a sprite\n" +
+              "This is followed by long pointers to each CEL (sprite data including control words)")]
+    internal class SpriteStructure
+    {
+        public short SpriteHeight;
+        public short SpriteCellCount;
+    }
+
     internal class SpriteRenderer
     {
         private const int PlaneCount = 2;
         private readonly IWriter _writer;
+        private readonly ICodeWriter _codeWriter;
         private readonly IBitmapTransformer _transformer;
-        private static bool _once;
         private List<byte[]> _converted0, _converted1;
         private SpriteDefinition _definition;
         private bool _attached;
 
-        public SpriteRenderer(IWriter writer, IBitmapTransformer transformer)
+        public SpriteRenderer(IWriter writer, ICodeWriter codeWriter, IBitmapTransformer transformer)
         {
             _writer = writer;
+            _codeWriter = codeWriter;
             _transformer = transformer;
         }
 
@@ -106,7 +116,8 @@ namespace ScrollerMapper.BitplaneRenderers
             var offset = 0;
             foreach (var sprite in list)
             {
-                _writer.WriteCode(Code.Data, $"\tdc.l\t{name}CelsSprite+{offset}");
+                // Need to redo how we write these down to support other languages
+                _codeWriter.AssemblyLongPointer($"{name}CelsSprite+{offset}");
                 offset += sprite.Length;
             }
 
@@ -117,7 +128,6 @@ namespace ScrollerMapper.BitplaneRenderers
             {
                 _writer.WriteBlob(sprite);
             }
-
             _writer.EndObject();
         }
 
@@ -134,35 +144,13 @@ namespace ScrollerMapper.BitplaneRenderers
 
         private void WriteSpriteHeader(string name)
         {
-            WriteSpriteCommentsOnce();
-
-            _writer.WriteCode(Code.Data, $"\tsection data");
-            _writer.WriteCode(Code.Data, $"{name}Sprite:");
-            _writer.WriteCode(Code.Data,
-                $"\tdc.w\t{_definition.Height - _definition.TopTrim - _definition.BottomTrim}");
-            _writer.WriteCode(Code.Data, $"\tdc.w\t{_definition.Count}");
+            _codeWriter.WriteStructValue($"{name}Sprite", new SpriteStructure
+            {
+                SpriteHeight = (short)(_definition.Height - _definition.TopTrim - _definition.BottomTrim),
+                SpriteCellCount = _definition.Count,
+            });
         }
-
-        private void WriteSpriteCommentsOnce()
-        {
-            if (_once) return;
-            _once = true;
-
-            _writer.WriteCode(Code.Normal, @"
-;---- SPRITES STRUCTURES ----
-    structure   SpriteStructure, 0
-    word        SpriteHeight_w
-    word        SpriteCellCount_w
-    label       SPRITE_STRUCT_SIZE
-; This is followed by SpriteCellCount_w CelStructure
-
-;---- CEL STRUCTURE ----
-    structure   SpriteCelStructure, 0
-    word        SCelPtr_l         ; Pointer to sprite data (excludes control words)
-    label       SCEL_STRUCT_SIZE ; This will be 8 so you can shift
-");
-        }
-
+        
         private Bitmap MapColors(Bitmap palette, Bitmap celBitmap)
         {
             var resultBitmap = new Bitmap(celBitmap.Width, celBitmap.Height, PixelFormat.Format8bppIndexed);
@@ -182,17 +170,17 @@ namespace ScrollerMapper.BitplaneRenderers
             else
             {
                 var spriteColorIndexOffset = (int.Parse(_definition.SpriteNumber) / 2) * 4;
-                for (int i = 1; i < 4; i++)
+                for (int i = 1; i <  4; i++)
                 {
                     resultPalette.Entries[i] = palette.Palette.Entries[i + spriteColorIndexOffset];
                 }
             }
 
-            var transformer = new IndexedTransformer(_definition.File, celBitmap, resultPalette);
+            var transformer = new IndexedTransformer(_definition.File, celBitmap, resultPalette, ConvertMode.TransparentIsZero);
             return transformer.ConvertToIndexed();
         }
 
-        public byte[] TrimSprite(byte[] sprite)
+        private byte[] TrimSprite(byte[] sprite)
         {
             var rowSize = _attached ? 8 : 4;
             var topTrim = _definition.TopTrim * rowSize;

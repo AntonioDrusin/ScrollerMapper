@@ -9,6 +9,21 @@ namespace ScrollerMapper.DefinitionModels
         public Dictionary<string, LevelLinkDefinition> Levels;
         public GamePanelDefinition Panel;
         public Dictionary<string, SpriteDefinition> Sprites;
+        public Dictionary<string, FontDefinition> Fonts;
+    }
+
+    internal class FontDefinition
+    {
+        public string Characters = "0123456789";
+        public int VerticalDistance;
+
+        public int X = 0;
+        public int Y = 0;
+        public int Height = 8;
+        public int Width = 8;
+        public string ImageFile;
+        public string PaletteFile;
+        public int PlaneCount = 1;
     }
 
     internal class GamePanelDefinition

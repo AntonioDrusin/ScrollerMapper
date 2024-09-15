@@ -29,7 +29,7 @@ namespace ScrollerMapper.Converters.Infos
 
         public bool HasAll(IEnumerable<string> itemTypes)
         {
-            return itemTypes.All(_ => _lists.Keys.Contains(_));
+            return itemTypes.All(s => _lists.Keys.Contains(s));
         }
 
         public IEnumerable<string> AvailableTypes()

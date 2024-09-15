@@ -4,6 +4,7 @@ using System.Linq;
 using ScrollerMapper.Converters;
 using ScrollerMapper.DefinitionModels;
 using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 
 namespace ScrollerMapper.BitplaneRenderers
 {
@@ -98,7 +99,7 @@ namespace ScrollerMapper.BitplaneRenderers
 
                 var planes = _transformer.GetInterleaved(_planeCount); // This will bump up to word size...
 
-                if (planes.Any(_ => _ != 0))
+                if (planes.Any(p => p != 0))
                 {
                     for (var y = 0; y < height; y++)
                     {
@@ -112,7 +113,7 @@ namespace ScrollerMapper.BitplaneRenderers
 
                         for (var x = 0; x < width / 8; x++)
                         {
-                            byte mask = _colorFlip ? (byte) 0xff : (byte) 0x00;
+                            var mask = _colorFlip ? (byte) 0xff : (byte) 0x00;
 
                             for (var bpl = 0; bpl < _planeCount; bpl++)
                             {
@@ -131,7 +132,7 @@ namespace ScrollerMapper.BitplaneRenderers
 
                             for (var bpl = 0; bpl < _planeCount; bpl++)
                             {
-                                rowMask[bpl * _bobWordWidth * 2 + x] = _colorFlip ? (byte) ~mask : (byte) mask;
+                                rowMask[bpl * _bobWordWidth * 2 + x] = _colorFlip ? (byte) ~mask : mask;
                             }
                         }
 
@@ -210,7 +211,7 @@ namespace ScrollerMapper.BitplaneRenderers
 
                 foreach (var row in bob.PlaneRows)
                 {
-                    var empty = row.All(_ => _ == 0);
+                    var empty = row.All(r => r == 0);
                     if (!firstDataEncountered)
                     {
                         firstRow = currentRow;

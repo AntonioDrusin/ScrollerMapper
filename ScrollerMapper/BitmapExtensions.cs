@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
-using ScrollerMapper.Transformers;
 
 namespace ScrollerMapper
 {
@@ -64,10 +63,10 @@ namespace ScrollerMapper
 
         public static void ValidatePalette(this ColorPalette palette, string name, int maxValues)
         {
-            var colors = palette.Entries.Take(maxValues).Select((_, i) => new
+            var colors = palette.Entries.Take(maxValues).Select((c, i) => new
             {
-                Color = _,
-                ConvertedColor = Color.FromArgb(_.A, _.R & 0xf0, _.G & 0xf0, _.B & 0xf0),
+                Color = c,
+                ConvertedColor = Color.FromArgb(c.A, c.R & 0xf0, c.G & 0xf0, c.B & 0xf0),
                 Index = i
             });
             var hash = new HashSet<Color>();

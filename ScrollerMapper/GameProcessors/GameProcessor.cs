@@ -5,11 +5,13 @@ using ScrollerMapper.BitplaneRenderers;
 using ScrollerMapper.Converters;
 using ScrollerMapper.Converters.Infos;
 using ScrollerMapper.DefinitionModels;
-using ScrollerMapper.HeaderRenderers;
+using ScrollerMapper.MiscRenderers;
+using ScrollerMapper.Processors;
+using ScrollerMapper.Writers;
 
-namespace ScrollerMapper.Processors
+namespace ScrollerMapper.GameProcessors
 {
-    internal class GameProcessor
+    internal class GameProcessor : IGameProcessor
     {
         private readonly IEnumerable<IProcessor> _processors;
         private readonly ImageConverter _imageConverter;
@@ -17,19 +19,23 @@ namespace ScrollerMapper.Processors
         private readonly HeaderRenderer _headerRenderer;
         private readonly SpriteRenderer _spriteRenderer;
         private readonly IWriter _writer;
+        private readonly ICodeWriter _codeWriter;
         private readonly ItemManager _items;
         private readonly BobConverter _bobConverter;
 
         public GameProcessor(IEnumerable<IProcessor> processors, ImageConverter imageConverter,
             MusicConverter musicConverter,
             HeaderRenderer headerRenderer,
-            IWriter writer, ItemManager items, BobConverter bobConverter, SpriteRenderer spriteRenderer)
+            IWriter writer,
+            ICodeWriter codeWriter,
+            ItemManager items, BobConverter bobConverter, SpriteRenderer spriteRenderer)
         {
             _processors = processors;
             _imageConverter = imageConverter;
             _musicConverter = musicConverter;
             _headerRenderer = headerRenderer;
             _writer = writer;
+            _codeWriter = codeWriter;
             _items = items;
             _bobConverter = bobConverter;
             _spriteRenderer = spriteRenderer;
@@ -48,19 +54,13 @@ namespace ScrollerMapper.Processors
             {
                 ProcessLoadingScreen(definition.LoadingScreen);
             }
-            else
-            {
-                throw new ConversionException("Must define a loadingScreen");
-            }
+        
 
             if (definition.Menu != null)
             {
                 ProcessMenu(definition.Menu);
             }
-            else
-            {
-                throw new ConversionException("Must define a menu");
-            }
+       
 
             if ( definition.Panel != null ) 
                 ProcessPanel(definition.Panel);
@@ -68,12 +68,14 @@ namespace ScrollerMapper.Processors
 
         private void ProcessPanel(GamePanelDefinition panel)
         {
-            _writer.WriteCode(Code.Normal, $"LIVES_X\tequ\t{panel.Lives.X}");
-            _writer.WriteCode(Code.Normal, $"LIVES_Y\tequ\t{panel.Lives.Y}");
-            _writer.WriteCode(Code.Normal, $"LIVES_MAX\tequ\t{panel.Lives.Max}");
-            _writer.WriteCode(Code.Normal, $"LIVES_START\tequ\t{panel.Lives.Start}");
-            _writer.WriteCode(Code.Normal, $"LIVES_PIXEL_WIDTH\tequ\t{panel.Lives.Bob.Width}");
-            _writer.WriteCode(Code.Normal, $"LIVES_PIXEL_HEIGHT\tequ\t{panel.Lives.Bob.Height}");
+            _codeWriter.WriteNumericConstant("LIVES_X",panel.Lives.X);
+            _codeWriter.WriteNumericConstant("LIVES_Y", panel.Lives.Y);
+            _codeWriter.WriteNumericConstant("LIVES_MAX", panel.Lives.Max);
+            _codeWriter.WriteNumericConstant("LIVES_START", panel.Lives.Start);
+            _codeWriter.WriteNumericConstant("LIVES_PIXEL_WIDTH", panel.Lives.Bob.Width);
+            _codeWriter.WriteNumericConstant("LIVES_PIXEL_HEIGHT", panel.Lives.Bob.Height.Value);
+
+
 
             var bobPalette = panel.Palette.FromInputFolder().LoadIndexedBitmap();
             _bobConverter.ConvertBob(
@@ -102,8 +104,9 @@ namespace ScrollerMapper.Processors
 
             var fastSize = _writer.GetCurrentOffset(ObjectType.Fast);
             var chipSize = _writer.GetCurrentOffset(ObjectType.Chip);
-            _writer.WriteCode(Code.Normal, $"MENU_FAST_SIZE\tequ\t{fastSize}");
-            _writer.WriteCode(Code.Normal, $"MENU_CHIP_SIZE\tequ\t{chipSize}");
+            
+            _codeWriter.WriteNumericConstant("MENU_FAST_SIZE",fastSize);
+            _codeWriter.WriteNumericConstant("MENU_CHIP_SIZE",chipSize);
 
             _writer.CompleteDiskFile();
         }
@@ -115,6 +118,8 @@ namespace ScrollerMapper.Processors
 
         private void ProcessAllLevels(GameDefinition definition)
         {
+            if (definition.Levels == null) return;
+
             List<string> levelHeaders = new List<string> {"BobPalette", "BobArray", "Waves", "Bonuses"};
 
             uint maxFastSize = 0;
@@ -128,7 +133,7 @@ namespace ScrollerMapper.Processors
 
                 var levelDefinition = level.FileName.FromInputFolder().ReadJsonFile<LevelDefinition>();
                 levelDefinition.Validate();
-                List<IProcessor> processors = _processors.OrderBy(_ => _.GetType().Name).ToList();
+                List<IProcessor> processors = _processors.OrderBy(p => p.GetType().Name).ToList();
 
                 while (processors.Count > 0)
                 {
@@ -161,8 +166,9 @@ namespace ScrollerMapper.Processors
                 _writer.CompleteDiskFile();
             }
 
-            _writer.WriteCode(Code.Normal, $"LEVEL_FAST_SIZE\tequ\t{maxFastSize}");
-            _writer.WriteCode(Code.Normal, $"LEVEL_CHIP_SIZE\tequ\t{maxChipSize}");
+            _codeWriter.WriteNumericConstant("LEVEL_FAST_SIZE",maxFastSize);
+            _codeWriter.WriteNumericConstant("LEVEL_CHIP_SIZE",maxChipSize);
+
         }
 
 

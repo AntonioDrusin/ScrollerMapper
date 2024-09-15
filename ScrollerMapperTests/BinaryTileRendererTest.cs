@@ -3,6 +3,7 @@ using Moq;
 using NUnit.Framework;
 using ScrollerMapper.TileRenderers;
 using ScrollerMapper.Transformers;
+using ScrollerMapper.Writers;
 using ScrollerMapperTests.Services;
 
 namespace ScrollerMapperTests
@@ -11,6 +12,7 @@ namespace ScrollerMapperTests
     public class BinaryTileRendererTest
     {
         private Mock<IBitmapTransformer> _transformerMock;
+        private Mock<ICodeWriter> _codeWriterMock;
         private BinaryTileRenderer _renderer;
         private MockWriter _writer;
 
@@ -18,8 +20,9 @@ namespace ScrollerMapperTests
         public void SetUp()
         {
             _transformerMock = new Mock<IBitmapTransformer>();
+            _codeWriterMock = new Mock<ICodeWriter>();
             _writer = new MockWriter();
-            _renderer = new BinaryTileRenderer(_transformerMock.Object, _writer);
+            _renderer = new BinaryTileRenderer(_transformerMock.Object, _writer, _codeWriterMock.Object);
         }
 
         [Test]

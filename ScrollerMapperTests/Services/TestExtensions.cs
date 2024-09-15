@@ -7,7 +7,7 @@ namespace ScrollerMapperTests.Services
     {
         public static IEnumerable<string> ToStringCollection(this IEnumerable<object> collection)
         {
-            return collection.Select(_ => _.ToString());
+            return collection.Select(i => i.ToString());
         }
     }
 }

@@ -22,7 +22,7 @@ namespace ScrollerMapperTests
         [Test]
         public void SplitsIntoFrames()
         {
-            var input = new PathStepDefinition[]
+            var input = new[]
             {
                 new PathStepDefinition {F = 10, X = 4, Y = 4},
             };
@@ -38,7 +38,7 @@ namespace ScrollerMapperTests
         [Test]
         public void LeavesJumpsAlone()
         {
-            var input = new PathStepDefinition[]
+            var input = new[]
             {
                 new PathStepDefinition {F = 2, X = 4, Y = 4},
                 new PathStepDefinition {F = 0, X = 0, Y = 0, Instruction = PathInstructionDefinition.Jump, Label = "Vel"},
@@ -70,7 +70,7 @@ namespace ScrollerMapperTests
 
             var result = _transformer.TransformPath(input);
 
-            var expected = new OutputPathStepInfo[]
+            var expected = new[]
             {
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 1, VelocityY = -1 },
                 new OutputPathStepInfo { FrameCount = 1, VelocityX = 3, VelocityY = -3 },

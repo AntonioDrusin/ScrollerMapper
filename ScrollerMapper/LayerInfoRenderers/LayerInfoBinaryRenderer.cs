@@ -1,12 +1,17 @@
-﻿namespace ScrollerMapper.LayerInfoRenderers
+﻿using ScrollerMapper.DefinitionModels;
+using ScrollerMapper.Writers;
+
+namespace ScrollerMapper.LayerInfoRenderers
 {
     internal class LayerInfoBinaryRenderer : ILayerInfoRenderer
     {
         private readonly IWriter _writer;
+        private readonly ICodeWriter _codeWriter;
 
-        public LayerInfoBinaryRenderer(IWriter writer)
+        public LayerInfoBinaryRenderer(IWriter writer, ICodeWriter codeWriter)
         {
             _writer = writer;
+            _codeWriter = codeWriter;
         }
 
         /// <summary>
@@ -25,8 +30,8 @@
         public void Render(string name, LayerDefinition layer, int tileBpl, int tileWidth, int tileHeight)
         {
             _writer.StartObject(ObjectType.Layer, name);
-            _writer.WriteCode(Code.Normal, $"LAYER_WIDTH_{name.ToUpperInvariant()}\t\tequ\t{layer.Width}");
-            _writer.WriteCode(Code.Normal, $"LAYER_HEIGHT_{name.ToUpperInvariant()}\t\tequ\t{layer.Height}");
+            _codeWriter.WriteNumericConstant($"LAYER_WIDTH_{name.ToUpperInvariant()}", layer.Width);
+            _codeWriter.WriteNumericConstant($"LAYER_HEIGHT_{name.ToUpperInvariant()}", layer.Height);
             foreach (var tileId in layer.TileIds)
             {
 
