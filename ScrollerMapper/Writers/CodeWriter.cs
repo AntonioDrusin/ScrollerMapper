@@ -53,7 +53,7 @@ namespace ScrollerMapper.Writers
             switch (memoryType)
             {
                 case CodeMemoryType.Chip:
-                    SourceDataFile.WriteLine("\tsection\t\tdatachip,data_c");
+                    SourceDataFile.WriteLine("\tsection\t\t.MEMF_CHIP,data_c");
                     break;
                 case CodeMemoryType.Fast:
                 default:
